@@ -1,5 +1,5 @@
 # Password Manager
-##DON'T USE IT TO STORE ANY REAL DATA.
+## DON'T USE IT TO STORE ANY REAL DATA.
 ## Usage
 It can be used with GUI or only CLI. The main file is PasswordManager.py, is the file, which is producing the CLI-output and so need to be run if CLI is the wanted Output method.
 The PasswordManagerGUI.py file is needed you would like to use the GUI variant. The PasswordManager.py file doesn't need the PasswordManagerGUI file if run as CLI variant, but the PasswordManagerGUI.py file indeed needs the PasswordManager.py file
