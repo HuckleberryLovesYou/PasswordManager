@@ -1,11 +1,14 @@
 # Password Manager
 ## Usage
 It can be used with GUI or only CLI. The main file is PasswordManager.py, is the file, which is producing the CLI-output and so need to be run if CLI is the wanted Output method.
-The PasswordManagerGUI.py file is needed you would like to use the GUI variant. The PasswordManager.py file doesn't need the PasswordManagerGUI file if run as CLI variant, but the PasswordManagerGUI.py file indeed needs the PasswordManager.py file.
-
+The PasswordManagerGUI.py file is needed you would like to use the GUI variant. The PasswordManager.py file doesn't need the PasswordManagerGUI file if run as CLI variant, but the PasswordManagerGUI.py file indeed needs the PasswordManager.py file
+ 
 **If you don't have a .txt-database yet, you can create one by creating a .txt file in the Select File popup.
 On the first time after creation you need to enter the debug mode.
 After that enter the password that you want to set as a master password. After that decrypt it with the just set master password, and you will be good to go.**
+
+
+**See commit history [here](https://github.com/HuckleberryLovesYou/coding/tree/main/vocational-school/python/PasswordManager)**
 # Features
 ## View
 This is the most basic feature in a Password Manager. This is the Section you can view your database.
