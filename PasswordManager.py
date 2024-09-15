@@ -32,41 +32,25 @@ def get_filepath() -> tuple[str, bool]: #let the user select a .txt-file and wri
     return global_filename, check_for_file(global_filename)
 
 
-def get_all_indices() -> list[str]:
-    all_indices = []
+def get_entries() -> dict[int, list[str]] | None:
+    entry_dict = {}
     with open(global_filename, "r") as passwords_file:
-        lines = passwords_file.readlines()
-        for line in lines:
-            index_to_append: str = ""
-            i = 0
-            while line[i].isdigit():
-                index_to_append += f"{line[i]}"
-                i += 1
-            all_indices.append(index_to_append)
-    return all_indices
+        passwords_file_lines = passwords_file.readlines()
+        passwords_file_line_count = len(passwords_file_lines)
+        if passwords_file_line_count == 0:
+            print("There are no entries in your database")
+            return None
+        for line in passwords_file_lines:
+            index, title, username, password = line.split(":")
+            entry_dict[int(index)] = [title, username, password]  # converts index to an integer to be sorted correctly in the next line
+    return dict(sorted(entry_dict.items()))  # returns a dictionary sorted be the entire key of type int and the corresponding title, username and password
 
 
-def view() -> dict[int, str]: #TODO: annotate
-    """The view function reads the contents of the password database file.
-    If there are no lines in the database file, it raises an exception and returns None.
-    Else it appends a fancied up representation of the password database file to the returned list.
-
-    :returns: a list of strings or None, if there are no lines in the database file
-    :raises: Exception, if there are no lines in the database file
-    """
-    password_dict = {}
-    if len(get_all_indices()) == 0:
-        password_dict[0] = {"There are no entries in your database"}
-        return password_dict
-    else:
-        with open(global_filename, "r") as passwords_file:
-            for line in passwords_file.readlines():
-                index, title, username, password = line.split(":")
-                password_dict[int(index)] = f"Title: {title}\tUsername: {username} \tPassword: {password}\n" # converts index to an integer to be sorted correctly in the next line
-        return dict(sorted(password_dict.items())) # returns a dictionary sorted be the entire key of type int and the corresponding title, username and password
+def view() -> dict[int, list[str]] | None:
+    return get_entries()
 
 
-def add(letters=True, numbers=True, special=True, characters_occurring_at_least_once=False, **kwargs) -> list[int, str] | None:
+def add(letters=True, numbers=True, special=True, characters_occurring_at_least_once=False, **kwargs) -> tuple[int, str] | None:
     """If password_length is specified password is overwritten"""
     title: str = kwargs.get("title")
     title_column_count = title.count(":")
@@ -83,16 +67,17 @@ def add(letters=True, numbers=True, special=True, characters_occurring_at_least_
             except ValueError:
                 raise ValueError(f"Expected type int for password_length but got {type(password_length)} instead")
 
-        existing_indices = get_all_indices()
-        int_existing_indices: list[int] = []
-        for i in existing_indices:
-            int_existing_indices.append(int(i))
 
-        highest_index: int = max(int_existing_indices)
-        for i in range(1, highest_index + 2):
-            if i not in int_existing_indices:
-                index = i
-                break
+        entries = get_entries()
+        if entries is not None:
+            existing_indices: list[int] = list(entries.keys())
+            for i in range(1, max(existing_indices) + 2):
+                if i not in existing_indices:
+                    index: int = i
+                    break
+        else:
+            print("No indices were found")
+            index: int = 1
 
         with open(global_filename, "a") as passwords_file:
             passwords_file.write(f"{index}:{title}:{username}:{password}\n")
@@ -103,22 +88,19 @@ def add(letters=True, numbers=True, special=True, characters_occurring_at_least_
 
 
 
-def remove(index_to_remove: int):
-    with open(global_filename, "r") as passwords_file:
-        lines = passwords_file.readlines()
-    existing_indexes = get_all_indices()
-    try:
-        line_to_remove = existing_indexes.index(str(index_to_remove))
-        del lines[line_to_remove]
-        with open(global_filename, "w") as passwords_file:
-            for line in lines:
-                passwords_file.write(line)
+def remove(index_to_remove: int) -> None:
+    entries: dict[int, list[str]] | None = get_entries()
+    if entries is None:
+        print("There are no entries in database")
+        return None
+    del entries[index_to_remove]
+    with open(global_filename, "w") as passwords_file:
+        for index, value in entries.items():
+            print(f"{index}:{value[0]}:{value[1]}:{value[2]}", file=passwords_file, end="")
+    print("Index removed successfully")
 
-        print("Index removed successfully")
-    except ValueError:
-        print("The index specified couldn't be found in the database")
-
-
+def edit(index_to_edit: int, user_input):
+    ...
 
 def main():
     def encrypt_and_quit(error_message="") -> None:
@@ -211,9 +193,12 @@ def main():
 
                 if mode == "view":
                     view_dict = view()
-                    print(view_dict)
-                    for key in view_dict.keys():
-                        print(f"{key}:\t\t{view_dict[key]}\n")
+                    try:
+                        for key in view_dict.keys():
+                            print(f"{key}:\t\tTitle: {view_dict[key][0]}\tUsername: {view_dict[key][1]}\tPassword: {view_dict[key][2]}\n")
+                    except AttributeError:
+                        print("No entries found in the database")
+
                     if cli_args_given:
                         encrypt_and_quit()
                 elif mode == "add":
