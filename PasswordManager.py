@@ -19,17 +19,34 @@ import argparse
 
 global_filename: str = ""
 
-def get_filepath() -> tuple[str, bool]: #let the user select a .txt-file and writes it into global_filename
-    def check_for_file(filepath, set_global_filename=False): #checks if file actually exists (might not be needed)
-        if exists(filepath): # imported from os.path
+def get_filepath() -> tuple[str, bool]:
+    """
+    This function prompts the user to select a .txt file using a gui file dialog imported from tkinter.filedialog
+    It then returns the absolute path of the selected file and a boolean with True if the file exists and False otherwise.
+
+    :param: None
+
+    :returns:  tuple[str, bool]: A tuple containing the absolute path of the selected file and a boolean indicating whether the file exists.
+    """
+    def is_real_file(filepath):
+        """
+        Checks if the specified path exists and returns a boolean indicating whether it exists or not.
+
+        :param filepath: This is the path that gets checked if it exists.
+        :type filepath: str
+
+        :returns: bool: True if the file exists or False if it does not exist.
+        """
+        if exists(filepath):
             print("Database found")
             return True
         else:
             print("No such database in directory")
             return False
+
     global global_filename
     global_filename = askopenfilename(title="Select database or create a new one and use debug mode after that:", filetypes=[("Text files" , "*.txt")])
-    return global_filename, check_for_file(global_filename)
+    return global_filename, is_real_file(global_filename)
 
 
 def get_entries() -> dict[int, list[str]] | None:
@@ -50,7 +67,7 @@ def view() -> dict[int, list[str]] | None:
     return get_entries()
 
 
-def add(letters=True, numbers=True, special=True, characters_occurring_at_least_once=False, **kwargs) -> tuple[int, str] | None:
+def add(sticky_index=0, letters=True, numbers=True, special=True, characters_occurring_at_least_once=False, **kwargs) -> tuple[int, str] | None:
     """If password_length is specified password is overwritten"""
     title: str = kwargs.get("title")
     title_column_count = title.count(":")
@@ -60,27 +77,32 @@ def add(letters=True, numbers=True, special=True, characters_occurring_at_least_
     password_column_count = title.count(":")
     if title_column_count == 0 and username_column_count == 0 and password_column_count == 0:
         password_length = kwargs.get("password_length")
-        if password_length != None:
+        if password_length is not None:
             try:
                 password_length = int(password_length)
                 password = PasswordGenerator.generate_password(password_length, letters=letters, numbers=numbers, special=special, characters_occurring_at_least_once=characters_occurring_at_least_once)
             except ValueError:
                 raise ValueError(f"Expected type int for password_length but got {type(password_length)} instead")
 
-
-        entries = get_entries()
-        if entries is not None:
-            existing_indices: list[int] = list(entries.keys())
-            for i in range(1, max(existing_indices) + 2):
-                if i not in existing_indices:
-                    index: int = i
-                    break
+        if sticky_index == 0:
+            entries = get_entries()
+            if entries is not None:
+                existing_indices: list[int] = list(entries.keys())
+                for i in range(1, max(existing_indices) + 2):
+                    if i not in existing_indices:
+                        index: int = i
+                        break
+            else:
+                print("No indices were found")
+                index: int = 1
         else:
-            print("No indices were found")
-            index: int = 1
+            index: int = sticky_index
 
         with open(global_filename, "a") as passwords_file:
-            passwords_file.write(f"{index}:{title}:{username}:{password}\n")
+            if sticky_index == 0: #adds a new line character only if an entry is actually added and not only edited
+                passwords_file.write(f"{index}:{title}:{username}:{password}\n")
+            else:
+                passwords_file.write(f"{index}:{title}:{username}:{password}")
         print(f"Entry added at index {index}")
         return index, password
     else:
@@ -99,10 +121,27 @@ def remove(index_to_remove: int) -> None:
             print(f"{index}:{value[0]}:{value[1]}:{value[2]}", file=passwords_file, end="")
     print("Index removed successfully")
 
-def edit(index_to_edit: int, user_input):
-    ...
+def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
+    if new_field_value.count(":") != 0:
+        raise Exception("Found column in string. Columns are not supported.")
 
-def main():
+    entries = get_entries()
+    if selected_field[0].lower() == "t":
+        remove(index_to_edit)
+        add(sticky_index=index_to_edit, title=new_field_value, username=entries[index_to_edit][1], password=entries[index_to_edit][2])
+    elif selected_field[0].lower() == "u":
+        remove(index_to_edit)
+        add(sticky_index=index_to_edit, title=entries[index_to_edit][0], username=new_field_value, password=entries[index_to_edit][2])
+    elif selected_field[0].lower() == "p":
+        remove(index_to_edit)
+        add(sticky_index=index_to_edit, title=entries[index_to_edit][0], username=entries[index_to_edit][1], password=new_field_value)
+    else:
+        raise Exception("Selected field is not supported. Supported fields: title [t], username [u], password [p]")
+    print("Successfully edited entry")
+
+
+
+def main() -> None:
     def encrypt_and_quit(error_message="") -> None:
         """
         Encrypt the password database file using the provided master password.
@@ -189,7 +228,7 @@ def main():
                         print("No mode specified")
                         quit()
                 else:
-                    mode = input("Choose mode [view/add/remove/q to quit]: ").lower()
+                    mode = input("Choose mode [view/add/remove/edit/q to quit]: ").lower()
 
                 if mode == "view":
                     view_dict = view()
@@ -281,7 +320,15 @@ def main():
 
                     if cli_args_given:
                         encrypt_and_quit()
-
+                elif mode == "edit":
+                    index_to_edit = input("Enter index to edit: ")
+                    if index_to_edit.isdigit():
+                        index_to_edit = int(index_to_edit)
+                    else:
+                        raise Exception("Please enter a valid index")
+                    selected_field = input("Please select the field you want to edit [title/username/password]: ")
+                    new_field_value = input("Please enter the new value of the field you want to edit: ")
+                    edit(index_to_edit, selected_field, new_field_value)
                 elif mode == "q":
                     encrypt_and_quit()
 
