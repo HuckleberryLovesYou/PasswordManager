@@ -167,19 +167,15 @@ def root_gui():
 
     def remove_gui():
         def call_remove():
-            try:
-                index_to_remove: int = index_to_remove_entry.get()
-                remove_response = PasswordManager.remove(index_to_remove)
-                if remove_response != None:
-                    index_remove_error_label = customtkinter.CTkLabel(master=remove_frame, text=f"{remove_response}")
-                    index_remove_error_label.pack(side="bottom", padx=10, pady=30)
-                    index_remove_error_label.after(1500, index_remove_error_label.destroy)
-                else:
-                    index_to_remove_label = customtkinter.CTkLabel(master=remove_frame, text=f"Removed index: {index_to_remove}")
-                    index_to_remove_label.pack(side="bottom", padx=10, pady=30)
-                    index_to_remove_label.after(1500, index_to_remove_label.destroy)
-            except:
-                pass
+            index_to_remove = index_to_remove_entry.get() #unsure what return type to get from .get()
+            if index_to_remove.isdigit():
+                index_to_remove = int(index_to_remove)
+            else:
+                print(f"Got wrong type in remove function. Got {type(index_to_remove)} instead of 'int'")
+            PasswordManager.remove(index_to_remove)
+            index_to_remove_label = customtkinter.CTkLabel(master=remove_frame, text=f"Removed index: {index_to_remove}")
+            index_to_remove_label.pack(side="bottom", padx=10, pady=30)
+            index_to_remove_label.after(1500, index_to_remove_label.destroy)
 
         root_frame.destroy()
         remove_frame = customtkinter.CTkFrame(master=root)
@@ -217,15 +213,16 @@ def root_gui():
         view_title_label = customtkinter.CTkLabel(master=view_frame, text="Password Manger", font=("Ariel", 28))
         view_title_label.pack(pady=20, padx=20)
 
-        lines = len(PasswordManager.get_all_indices())
-        show_total_lines_label = customtkinter.CTkLabel(master=view_frame, text=f"Total lines: {lines}", fg_color="transparent")
+        entries = PasswordManager.view()
+        lines_count = len(entries)
+        show_total_lines_label = customtkinter.CTkLabel(master=view_frame, text=f"Total lines: {lines_count}", fg_color="transparent")
         show_total_lines_label.pack(anchor="ne", pady=30, padx=20)
 
-        view_list = PasswordManager.view()
+        if entries is not None:
+            for key in entries:
+                element_label = customtkinter.CTkLabel(master=view_frame, text=f"{key}:\tTitle: {entries[key][0]} \tUsername: {entries[key][1]}\tPassword: {entries[key][2]}")
+                element_label.pack(anchor="nw", padx=8, pady=8)
 
-        for element in view_list:
-            element_label = customtkinter.CTkLabel(master=view_frame, text=f"{element}")
-            element_label.pack(anchor="nw", padx=8, pady=8)
 
     def add_gui():
         root_frame.destroy()
