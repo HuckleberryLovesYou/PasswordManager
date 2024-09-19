@@ -19,11 +19,11 @@ from cryptography.fernet import Fernet
 
 
 
-def convert_master_password_to_key(user_master_password: str) -> bytes: #TODO: Do some research
+def convert_master_password_to_key(user_master_password: str) -> bytes:
     """Takes string user_master_password and returns the generated key as bytes.
     It is needed for encryption and decryption using encrypt_database() and decrypt_database()"""
     user_master_password = user_master_password.encode()
-    salt: bytes = b'\xba\x80\xa0\xfe#\xd59\xe7\xe0\rD\xecU\xa2\xe1\x80' #I guess it makes no sense to use salt, since this application is open-source anyway. Need to do some research
+    salt: bytes = b'\xba\x80\xa0\xfe#\xd59\xe7\xe0\rD\xecU\xa2\xe1\x80'
 
     kdf: PBKDF2HMAC = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
@@ -84,5 +84,7 @@ def main() -> None:
     # This is needed, if the program is quit - without the use of 'q to quit', while the database is already encrypted
     encrypt_database(filename, convert_master_password_to_key(password))
 
+    # Test password convertion
+    print(convert_master_password_to_key(password))
 if __name__ == '__main__':
     main()
