@@ -119,6 +119,7 @@ def remove(index_to_remove: int) -> None:
     with open(global_filename, "w") as passwords_file:
         for index, value in entries.items():
             print(f"{index}:{value[0]}:{value[1]}:{value[2]}", file=passwords_file, end="")
+    print(f"Index {index} removed successfully")
 
 def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
     if new_field_value.count(":") != 0:
