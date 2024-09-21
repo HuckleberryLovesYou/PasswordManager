@@ -13,6 +13,7 @@
 # THIS IS JUST A FUN PROJECT NOT MEANT TO BE USED
 from time import sleep
 import customtkinter
+from os import stat
 import PasswordManager
 import PasswordManagerCryptography
 
@@ -77,7 +78,7 @@ def root_gui():
                 debug_frame.destroy()
                 master_password_gui()
 
-            def check_passwords(*args):
+            def check_passwords_debug():
                 first_password = first_encrypt_password_password_entry.get()
                 second_password = second_encrypt_password_password_entry.get()
                 if first_password != "" and second_password != "":
@@ -85,7 +86,7 @@ def root_gui():
                         encrypt_button_debug.configure(state="normal")
                     else:
                         encrypt_button_debug.configure(state="disabled")
-                debug_frame.after(100, check_passwords)
+                debug_frame.after(100, check_passwords_debug)
 
             back_debug_button = customtkinter.CTkButton(master=debug_frame, text="< Back", command=back_to_master_password)
             back_debug_button.pack(anchor="nw", pady=5, padx=5)
@@ -106,11 +107,7 @@ def root_gui():
             debug_warning_label.pack(side="bottom", padx=10, pady=30)
             debug_warning_label.after(15000, debug_warning_label.destroy)
 
-            check_passwords()
-
-
-
-
+            check_passwords_debug()
 
         def back_to_root():
             master_password_frame.destroy()
@@ -148,6 +145,23 @@ def root_gui():
                 decrypt_error_label.pack(side="bottom", padx=10, pady=30)
                 decrypt_error_label.after(1500, decrypt_error_label.destroy)
 
+        def skip_cryptography():
+            global DECRYPTED
+            DECRYPTED = True
+            master_password_frame.destroy()
+            root_gui()
+
+        def check_passwords_new_database():
+            first_password = first_new_master_password_entry.get()
+            second_password = second_new_master_password_entry.get()
+            if first_password != "" and second_password != "":
+                if first_password == second_password:
+                    set_master_password_button.configure(state="normal")
+                else:
+                    set_master_password_button.configure(state="disabled")
+            set_master_password_button.after(100, check_passwords_new_database)
+
+
         master_password_frame = customtkinter.CTkFrame(master=root)
         master_password_frame.pack(pady=20, padx=20, fill="both", expand=True)
 
@@ -157,11 +171,26 @@ def root_gui():
         title_label_master_password = customtkinter.CTkLabel(master=master_password_frame, text="Password Manger", font=("Ariel", 28))
         title_label_master_password.pack(pady=20, padx=20)
 
-        master_password_entry = customtkinter.CTkEntry(master=master_password_frame, placeholder_text="Master password", show="*")
-        master_password_entry.pack(padx=10, pady=10)
+        # skips decryption of database if database is new. A database without any entries is NOT empty.
+        # checks the size of the database in bytes
+        if stat(FILENAME).st_size == 0:
+            first_new_master_password_entry = customtkinter.CTkEntry(master=master_password_frame, placeholder_text="New Master password", show="*", width=200)
+            first_new_master_password_entry.pack(padx=10, pady=10)
 
-        decrypt_button = customtkinter.CTkButton(master=master_password_frame, text="Decrypt", command=call_decrypt)
-        decrypt_button.pack(padx=10, pady=10)
+            second_new_master_password_entry = customtkinter.CTkEntry(master=master_password_frame, placeholder_text="Retype new Master password", show="*", width=200)
+            second_new_master_password_entry.pack(padx=10, pady=10)
+
+            set_master_password_button = customtkinter.CTkButton(master=master_password_frame, text="Set new Master Password", command=skip_cryptography, state="disabled")
+            set_master_password_button.pack(padx=10, pady=10)
+
+
+            check_passwords_new_database()
+        else:
+            master_password_entry = customtkinter.CTkEntry(master=master_password_frame, placeholder_text="Enter Master Password", show="*")
+            master_password_entry.pack(padx=10, pady=10)
+
+            decrypt_button = customtkinter.CTkButton(master=master_password_frame, text="Decrypt", command=call_decrypt)
+            decrypt_button.pack(padx=10, pady=10)
 
 
 
@@ -214,14 +243,20 @@ def root_gui():
         view_title_label.pack(pady=20, padx=20)
 
         entries = PasswordManager.view()
-        lines_count = len(entries)
-        show_total_lines_label = customtkinter.CTkLabel(master=view_frame, text=f"Total lines: {lines_count}", fg_color="transparent")
-        show_total_lines_label.pack(anchor="ne", pady=30, padx=20)
-
         if entries is not None:
+            lines_count = len(entries)
+            show_total_lines_label = customtkinter.CTkLabel(master=view_frame, text=f"Total lines: {lines_count}", fg_color="transparent")
+            show_total_lines_label.pack(anchor="ne", pady=30, padx=20)
+
             for key in entries:
-                element_label = customtkinter.CTkLabel(master=view_frame, text=f"{key}:\tTitle: {entries[key][0]} \tUsername: {entries[key][1]}\tPassword: {entries[key][2]}")
-                element_label.pack(anchor="nw", padx=8, pady=8)
+                entry_label = customtkinter.CTkLabel(master=view_frame, text=f"{key}:\tTitle: {entries[key][0]} \tUsername: {entries[key][1]}\tPassword: {entries[key][2]}")
+                entry_label.pack(anchor="nw", padx=8, pady=8)
+        else:
+            show_total_lines_label = customtkinter.CTkLabel(master=view_frame, text=f"Total lines: 0", fg_color="transparent")
+            show_total_lines_label.pack(anchor="ne", pady=30, padx=20)
+
+            no_entries_in_database_label = customtkinter.CTkLabel(master=view_frame, text="No entries found in database.")
+            no_entries_in_database_label.pack(anchor="nw", padx=8, pady=8)
 
 
     def add_gui():
