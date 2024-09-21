@@ -119,19 +119,23 @@ def add(title: str, username: str, password: str | None = None, password_length:
     :except Exception: If a column was found in one of the string inputs of this function, since it is the slice character in the database or the password_length was not specified, even though password is not specified as well.
     """
     # checks if new entry has a column in it since it is the slice character.
-    if title.count(":") != 0 or username.count(":") != 0 or password.count(":") != 0:
-        raise Exception("Found column in string. Columns are not supported.")
 
     # generates a password according to switches if it was not provided.
     if password is None:
         if password_length is None:
             raise Exception("The password length must be specified if password is not specified.")
         else:
+            if title.count(":") != 0 or username.count(":") != 0:
+                raise Exception("Found column in string. Columns are not supported.")
+
             try:
                 password_length = int(password_length)
                 password = PasswordGenerator.generate_password(password_length, letters=allow_letters, numbers=allow_numbers, special=allow_special, characters_occurring_at_least_once=force_characters_occurring_at_least_once)
             except ValueError:
                 raise ValueError(f"Expected type int for password_length but got {type(password_length)} instead")
+    else:
+        if title.count(":") != 0 or username.count(":") != 0 or password.count(":") != 0:
+            raise Exception("Found column in string. Columns are not supported.")
 
     # gets index to assign to new entry
     if sticky_index is None:
