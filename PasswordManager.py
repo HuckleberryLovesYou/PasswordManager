@@ -12,17 +12,18 @@
 # DO NOT USE IT TO STORE ANY IMPORTANT DATA
 
 from os.path import exists
+from os import stat
 import PasswordGenerator
 from tkinter.filedialog import askopenfilename
 import PasswordManagerCryptography
 import argparse
 
-global_filename: str = ""
+global_filename: str = "password.txt"
 
 def get_filepath() -> tuple[str, bool]:
     """
     This function prompts the user to select a .txt file using a gui file dialog imported from tkinter.filedialog
-    It then returns the absolute path of the selected file and a boolean with True if the file exists and False otherwise.
+    It then returns the absolute path of the selected database and a boolean with True if the file exists and False otherwise.
 
     :param: None
 
@@ -35,7 +36,7 @@ def get_filepath() -> tuple[str, bool]:
         :param filepath: This is the path that gets checked if it exists.
         :type filepath: str
 
-        :returns: bool: True if the file exists or False if it does not exist.
+        :returns: bool: True if the database exists or False if it does not exist.
         """
         if exists(filepath):
             print("Database found")
@@ -45,7 +46,7 @@ def get_filepath() -> tuple[str, bool]:
             return False
 
     global global_filename
-    global_filename = askopenfilename(title="Select database or create a new one and use debug mode after that:", filetypes=[("Text files" , "*.txt")])
+    global_filename = askopenfilename(title="Select database or create a new one:", filetypes=[("Text files" , "*.txt")])
     return global_filename, is_real_file(global_filename)
 
 
@@ -59,13 +60,12 @@ def get_entries() -> dict[int, list[str]] | None:
     :rtype: dict[int, list[str]] | None
     """
     entry_dict = {}
-    with open(global_filename, "r") as passwords_file:
-        passwords_file_lines = passwords_file.readlines()
-        passwords_file_line_count = len(passwords_file_lines)
-        if passwords_file_line_count == 0:
+    with open(global_filename, "r") as database:
+        database_lines = database.readlines()
+        if len(database_lines) == 0:
             print("There are no entries in your database")
             return None
-        for line in passwords_file_lines:
+        for line in database_lines:
             index, title, username, password = line.split(":")
             entry_dict[int(index)] = [title, username, password]  # converts index to an integer to be sorted correctly in the next line
     return dict(sorted(entry_dict.items()))  # returns a dictionary sorted be the entire key of type int and the corresponding title, username and password
@@ -75,17 +75,6 @@ def view() -> dict[int, list[str]] | None:
     return get_entries()
 
 
-def add(sticky_index=0, letters=True, numbers=True, special=True, characters_occurring_at_least_once=False, **kwargs) -> tuple[int, str] | None:
-    """If password_length is specified password is overwritten"""
-    title: str = kwargs.get("title")
-    title_column_count = title.count(":")
-    username: str = kwargs.get("username")
-    username_column_count = title.count(":")
-    password: str = kwargs.get("password")
-    password_column_count = title.count(":")
-    if title_column_count == 0 and username_column_count == 0 and password_column_count == 0:
-        password_length = kwargs.get("password_length")
-        if password_length is not None:
 def add(title: str, username: str, password: str | None = None, password_length: int | None = None, sticky_index: int | None = None, allow_letters: bool = True, allow_numbers: bool = True, allow_special: bool = True, force_characters_occurring_at_least_once: bool = False) -> tuple[int, str] | None:
     """
     Used to add an entry to the database. It will determine the next available index.
@@ -144,29 +133,30 @@ def add(title: str, username: str, password: str | None = None, password_length:
             except ValueError:
                 raise ValueError(f"Expected type int for password_length but got {type(password_length)} instead")
 
-        if sticky_index == 0:
-            entries = get_entries()
-            if entries is not None:
-                existing_indices: list[int] = list(entries.keys())
-                for i in range(1, max(existing_indices) + 2):
-                    if i not in existing_indices:
-                        index: int = i
-                        break
-            else:
-                print("No indices were found")
-                index: int = 1
+    # gets index to assign to new entry
+    if sticky_index is None:
+        entries = get_entries()
+        if entries is not None:
+            existing_indices: list[int] = list(entries.keys())
+            for i in range(1, max(existing_indices) + 2):
+                if i not in existing_indices:
+                    index: int = i
+                    break
         else:
-            index: int = sticky_index
-
-        with open(global_filename, "a") as passwords_file:
-            if sticky_index == 0: #adds a new line character only if an entry is actually added and not only edited
-                passwords_file.write(f"{index}:{title}:{username}:{password}\n")
-            else:
-                passwords_file.write(f"{index}:{title}:{username}:{password}")
-        print(f"Entry added at index {index}")
-        return index, password
+            print("No indices were found")
+            index: int = 1
     else:
-        raise Exception("Found column in string. Columns are not supported.")
+        index: int = sticky_index
+
+    # write new entry to database
+    with open(global_filename, "a") as database:
+        # adds a new line character only if an entry is actually added and not only edited
+        if sticky_index is None:
+            database.write(f"{index}:{title}:{username}:{password}\n")
+        else:
+            database.write(f"{index}:{title}:{username}:{password}")
+    print(f"Entry added at index {index}")
+    return index, password
 
 
 
@@ -175,11 +165,16 @@ def remove(index_to_remove: int) -> None:
     if entries is None:
         print("There are no entries in database")
         return None
+
+    # removes specified entry.
     del entries[index_to_remove]
-    with open(global_filename, "w") as passwords_file:
+
+    # overwrites database with all entries except the removed entry.
+    with open(global_filename, "w") as database:
         for index, value in entries.items():
-            print(f"{index}:{value[0]}:{value[1]}:{value[2]}", file=passwords_file, end="")
-    print(f"Index {index} removed successfully")
+            print(f"{index}:{value[0]}:{value[1]}:{value[2]}", file=database, end="")
+    print(f"Index {index_to_remove} removed successfully")
+
 
 def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
     if new_field_value.count(":") != 0:
@@ -271,62 +266,55 @@ def main() -> None:
             if args.generate_password_boolean:
                 title = args.title
                 username = args.username
-                password = "G"  # spoof that the password input was "G" to enter password generation, so fewer code changes needed
+                password_length = args.password_length
+                index, used_password = add(title, username, password_length)
             else:
                 title = args.title
                 username = args.username
                 password = args.password
+                index, used_password = add(title, username, password)
         else:
             title = input("Title: ")
             username = input("Username: ")
             password = input("Password ['G' to generate]: ")
-        if password == "G":
-            if cli_args_given:
-                configure_password_generation = "n"  # spoof that there is no configuration for password generation wanted
-            else:
-                configure_password_generation = input("Configure password generation? [y/n]: ").lower()
+            if password == "G":
+                if input("Configure password generation? [y/n]: ").lower() == "y":
+                    characters_must_occur_once_bool: bool = True
+                    if input("Force at least one occurrences of above characters? [y/n]: ").lower() == "y":
+                        characters_must_occur_once_bool = True
 
-            if configure_password_generation == "y":
-                generate_letters = input("Enable the generation of letters (lowercase and uppercase)? [y/n]: ").lower()
-                generate_numbers = input("Enable the generation of numbers? [y/n]: ").lower()
-                generate_special_characters = input("Enable the generation of special characters? [y/n]: ").lower()
+                    generate_letters: bool = False
+                    generate_numbers: bool = False
+                    generate_special_characters: bool = False
 
-                characters_must_occur_once_bool: bool = False
-                characters_must_occur_once = input(
-                    "Force at least one occurrences of above characters? [y/n]: ").lower()
-                if characters_must_occur_once == "y":
-                    characters_must_occur_once_bool = True
+                    if not generate_letters and not generate_numbers and not generate_special_characters:
+                        raise Exception("Cannot generate a password without characters.")
 
-                generate_letters_bool: bool = False
-                generate_numbers_bool: bool = False
-                generate_special_characters_bool: bool = False
+                    if input("Enable the generation of letters (lowercase and uppercase)? [y/n]: ").lower() == "y":
+                        generate_letters = True
+                    if input("Enable the generation of numbers? [y/n]: ").lower() == "y":
+                        generate_numbers = True
+                    if input(
+                            "Enable the generation of special characters? [y/n]: ").lower() == "y":
+                        generate_special_characters = True
 
-                while not generate_letters_bool or not generate_numbers_bool or not generate_special_characters_bool:
-                    if generate_letters == "y":
-                        generate_letters_bool = True
-                    if generate_numbers == "y":
-                        generate_numbers_bool = True
-                    if generate_special_characters == "y":
-                        generate_special_characters_bool = True
-                    break
-
-                generate_password_length = input("Enter password length [4-inf]: ")
-                index, generated_password = add(title=title, username=username, password_length=generate_password_length, letters=generate_letters_bool, numbers=generate_numbers_bool, special=generate_special_characters_bool, characters_occurring_at_least_once=characters_must_occur_once_bool)
-
-            else:
-                if cli_args_given:
-                    generate_password_length = args.length
+                    while True:
+                        generate_password_length: str = input("Enter password length [4-inf]: ")
+                        if generate_password_length.isdigit() and len(generate_password_length) >= 2:
+                            index, used_password = add(title=title, username=username, password_length=int(generate_password_length), allow_letters=generate_letters, allow_numbers=generate_numbers, allow_special=generate_special_characters, force_characters_occurring_at_least_once=characters_must_occur_once_bool)
+                            break
                 else:
-                    generate_password_length = input("Enter password length [8-inf]: ")
+                    generate_password_length: str = input("Enter password length [4-inf]: ")
+                    if generate_password_length.isdigit() and len(generate_password_length) >= 2:
+                        index, used_password = add(title=title, username=username, password_length=int(generate_password_length))
+                    else:
+                        raise Exception("Please enter a valid password length")
 
-                index, generated_password = add(title=title, username=username, password_length=generate_password_length)
+            else:
+                index, used_password = add(title=title, username=username, password=password)
 
-        else:
-            index, generated_password = add(title=title, username=username, password=password)
-
-
-        if generated_password != password:
-            print("Your password is set to ", generated_password)
+        if used_password != password:
+            print("Your password is set to ", used_password)
         if cli_args_given:
             encrypt_and_quit()
 
