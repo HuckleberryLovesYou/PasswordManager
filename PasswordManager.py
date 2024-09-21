@@ -50,6 +50,14 @@ def get_filepath() -> tuple[str, bool]:
 
 
 def get_entries() -> dict[int, list[str]] | None:
+    """
+    It opens the file in read mode, gets all lines.
+    It splits every line into index, title, username, password by the split character ':'. This is the reason, why no column is allowed in the entries.
+    It sorts the entries by their index.
+
+    :return: A dictionary containing the entries, sorted by their keys, which are the indices of the corresponding value. Each entrie is represented as a list of strings, containing the title, username, and password in the value. If the database is empty it returns None.
+    :rtype: dict[int, list[str]] | None
+    """
     entry_dict = {}
     with open(global_filename, "r") as passwords_file:
         passwords_file_lines = passwords_file.readlines()
@@ -78,9 +86,61 @@ def add(sticky_index=0, letters=True, numbers=True, special=True, characters_occ
     if title_column_count == 0 and username_column_count == 0 and password_column_count == 0:
         password_length = kwargs.get("password_length")
         if password_length is not None:
+def add(title: str, username: str, password: str | None = None, password_length: int | None = None, sticky_index: int | None = None, allow_letters: bool = True, allow_numbers: bool = True, allow_special: bool = True, force_characters_occurring_at_least_once: bool = False) -> tuple[int, str] | None:
+    """
+    Used to add an entry to the database. It will determine the next available index.
+    It allows to force an index (e.g. if an edit on an entry is needed, the entry still has the same index as
+    before (it will be added at the end of the database, but the database gets sorted by indices at view anyway))
+
+    It can also generate a new password using PasswordGenerator.generate_password() function. This function supports many different  switches listed below.
+    If no password is specified, it will generate a new password with a length specified in password_length: int. It needs a length specified, otherwise it will error.
+
+
+    :param title: Used to specify the title of the new entry
+    :type title: str
+
+    :param username: Used to specify the username of the new entry
+    :type username: str
+
+    :param password: Used to specify the password of the new entry. If it is not provided, a password will be generated. For that value in password_length is required.
+    :type password: str | None
+
+    :param password_length: The length of the generated password. Only used if password is not provided. If password is not provided then password_length is required.
+    :type password_length: int | None
+
+    :param sticky_index: The index to assign to the new entry. If not provided, an index will be automatically assigned. Used to keep same index after editing an entry.
+    :type sticky_index: int | None
+
+    :param allow_letters: This specifies the switches send to the generate_password() function. Whether to allow letters(lower- and uppercase) in the generated password. Default is True.
+    :type allow_letters: bool
+
+    :param allow_numbers: This specifies the switches send to the generate_password() function. Whether to allow numbers in the generated password. Default is True.
+    :type allow_numbers: bool
+
+    :param allow_special: This specifies the switches send to the generate_password() function. Whether to allow special characters in the generated password. Default is True.
+    :type allow_special: bool
+
+    :param force_characters_occurring_at_least_once: This specifies the switches send to the generate_password() function. Whether to force at least one occurrence of each character type in the generated password. Default is False.
+    :type force_characters_occurring_at_least_once: bool
+
+    :return: A tuple containing the index of the new entry and the password set for the new entry. If the entry was not added, returns None.
+    :rtype: tuple[int, str] | None
+
+    :except ValueError: If the value in password_length is not convertible to an integer.
+    :except Exception: If a column was found in one of the string inputs of this function, since it is the slice character in the database or the password_length was not specified, even though password is not specified as well.
+    """
+    # checks if new entry has a column in it since it is the slice character.
+    if title.count(":") != 0 or username.count(":") != 0 or password.count(":") != 0:
+        raise Exception("Found column in string. Columns are not supported.")
+
+    # generates a password according to switches if it was not provided.
+    if password is None:
+        if password_length is None:
+            raise Exception("The password length must be specified if password is not specified.")
+        else:
             try:
                 password_length = int(password_length)
-                password = PasswordGenerator.generate_password(password_length, letters=letters, numbers=numbers, special=special, characters_occurring_at_least_once=characters_occurring_at_least_once)
+                password = PasswordGenerator.generate_password(password_length, letters=allow_letters, numbers=allow_numbers, special=allow_special, characters_occurring_at_least_once=force_characters_occurring_at_least_once)
             except ValueError:
                 raise ValueError(f"Expected type int for password_length but got {type(password_length)} instead")
 
@@ -317,7 +377,7 @@ def main() -> None:
 
 
     def handle_database_cryptography():
-        for _ in range(3):
+        while True:
             if cli_args_given:
                 master_password: str = args.master_password
             else:
@@ -334,7 +394,7 @@ def main() -> None:
             else:
                 if master_password == "d":
                     print("Enabling Debug Mode")
-                    print("Enter password to encrypt the file with")
+                    print("Enter password to encrypt the database with")
                     master_password = input("Enter Master Password: ")
                     key = PasswordManagerCryptography.convert_master_password_to_key(master_password)  # needed because of new password entry
                     PasswordManagerCryptography.encrypt_database(global_filename, key)
@@ -344,10 +404,6 @@ def main() -> None:
                 print("Database decrypted")
                 print("If program is now closed without the use of 'q to quit', the database needs to be repaired in debug mode!")
                 return master_password
-            return master_password
-        else:
-            raise Exception("Error while crypting database")
-
 
 
 
@@ -363,10 +419,20 @@ def main() -> None:
         print("No arguments found\nUsing interactive mode instead")
 
 
-    for i in range(3):
-        filepath, file_found = get_filepath()
-        if file_found:
-            master_password = handle_database_cryptography()
+
+    for _ in range(3):
+        filepath, database_found = get_filepath()
+        if database_found:
+            if stat(filepath).st_size == 0: # checks if selected database's size in bytes is 0 bytes.
+                print("Database selected is empty, setting new master password")
+                if cli_args_given:
+                    master_password: str = args.master_password
+                else:
+                    master_password: str = input("Enter new Master Password: ")
+                print(f"Set {master_password} as new master password. Don't forget it!")
+            else:
+                master_password: str = handle_database_cryptography()
+
             #handles key generation, if debug mode was used in cli mode
             if cli_args_given and args.debug:
                 encrypt_and_quit()
