@@ -123,19 +123,23 @@ def add(title: str, username: str, password: str | None = None, password_length:
     # generates a password according to switches if it was not provided.
     if password is None:
         if password_length is None:
-            raise Exception("The password length must be specified if password is not specified.")
+            print("The password length must be specified if password is not specified.")
+            return None
         else:
             if title.count(":") != 0 or username.count(":") != 0:
-                raise Exception("Found column in string. Columns are not supported.")
+                print("Found column in string. Columns are not supported.")
+                return None
 
             try:
                 password_length = int(password_length)
                 password = PasswordGenerator.generate_password(password_length, letters=allow_letters, numbers=allow_numbers, special=allow_special, characters_occurring_at_least_once=force_characters_occurring_at_least_once)
             except ValueError:
-                raise ValueError(f"Expected type int for password_length but got {type(password_length)} instead")
+                print(f"Expected type int for password_length but got {type(password_length)} instead")
+                return None
     else:
         if title.count(":") != 0 or username.count(":") != 0 or password.count(":") != 0:
-            raise Exception("Found column in string. Columns are not supported.")
+            print("Found column in string. Columns are not supported.")
+            return None
 
     # gets index to assign to new entry
     if sticky_index is None:
@@ -185,7 +189,8 @@ def remove(index_to_remove: int) -> None:
 
 def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
     if new_field_value.count(":") != 0:
-        raise Exception("Found column in string. Columns are not supported.")
+        print("Found column in string. Columns are not supported.")
+        return None
 
     entries = get_entries()
 
@@ -206,7 +211,8 @@ def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
         remove(index_to_edit)
         add(sticky_index=index_to_edit, title=entries[index_to_edit][0], username=entries[index_to_edit][1], password=new_field_value)
     else:
-        raise Exception("Selected field is not supported. Supported fields: title [t], username [u], password [p]")
+        print("Selected field is not supported. Supported fields: title [t], username [u], password [p]")
+        return None
     print("Successfully edited entry")
 
 
@@ -264,7 +270,7 @@ def main() -> None:
 
 
 
-    def handle_view_mode():
+    def handle_view_mode() -> None:
         view_dict = view()
         try:
             for key in view_dict.keys():
@@ -276,7 +282,7 @@ def main() -> None:
             encrypt_and_quit()
 
 
-    def handle_add_mode():
+    def handle_add_mode() -> None:
         if cli_args_given:
             if args.generate_password_boolean:
                 title = args.title
@@ -309,7 +315,8 @@ def main() -> None:
                         characters_must_occur_once_bool = True
 
                     if not generate_letters and not generate_numbers and not generate_special_characters:
-                        raise Exception("Cannot generate a password without characters.")
+                        print("Cannot generate a password without characters.")
+                        return None
 
                     while True:
                         generate_password_length: str = input("Enter password length [4-inf]: ")
@@ -323,10 +330,13 @@ def main() -> None:
                     if generate_password_length.isdigit() and len(generate_password_length) >= 2:
                         index, used_password = add(title=title, username=username, password_length=int(generate_password_length))
                     else:
-                        raise Exception("Please enter a valid password length")
-
+                        print("Please enter a valid password length")
+                        return None
             else:
-                index, used_password = add(title=title, username=username, password=password)
+                try:
+                    index, used_password = add(title=title, username=username, password=password)
+                except TypeError:
+                    return None
 
         if used_password != password:
             print("Your password is set to ", used_password)
@@ -334,7 +344,7 @@ def main() -> None:
             encrypt_and_quit()
 
 
-    def handle_remove_mode():
+    def handle_remove_mode() -> None:
         if cli_args_given:
             index_to_remove = str(args.index_to_remove)
         else:
@@ -350,12 +360,13 @@ def main() -> None:
             encrypt_and_quit()
 
 
-    def handle_edit_mode():
+    def handle_edit_mode() -> None:
         index_to_edit = input("Enter index to edit: ")
         if index_to_edit.isdigit():
             index_to_edit = int(index_to_edit)
         else:
-            raise Exception("Please enter a valid index")
+            print("Please enter a valid index")
+            return None
         selected_field = input("Please select the field you want to edit [title/username/password]: ")
         new_field_value = input("Please enter the new value of the field you want to edit: ")
         edit(index_to_edit, selected_field, new_field_value)
@@ -435,7 +446,6 @@ def main() -> None:
                 print(f"Set {master_password} as new master password. Don't forget it!")
             else:
                 master_password: str = handle_database_cryptography()
-
             #handles key generation, if debug mode was used in cli mode
             if cli_args_given and args.debug:
                 encrypt_and_quit()
