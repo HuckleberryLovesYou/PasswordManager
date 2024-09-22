@@ -14,20 +14,32 @@ After that enter the password that you want to set as a master password. After t
 ## View
 This is the most basic feature in a Password Manager. This is the Section you can view your database.
 If the database is empty, the program will tell you.
+
 ## Add
 The next feature is the add feature.
 It can be used to create new passwords.
 It is capable to set the title, the username, the password for each entry.
-Currently, the amount of entries is limited to 10000. After that it will start overwriting existing entries.
+Each entry will have its own unique index as an identifier.
+There is no limit in the number of entries.
+The only character not allowed is the ':'[column].
+
 
 A special feature is, that you can also generate passwords. To utilize this function, enter a 'G' into the password entry and hit enter.
-After that you can enter the password length of the password to generate (8-inf).
-Until now, it is not possible to specify which character it should be using and so it generates a pretty strong password.
-If a password_length is specified it's going to ignore any entries in the password field (mostly exploitable in the GUI).
-It will always put a new entry at the highest index + 1 and will not fill up indexes already deleted.
+After that you can enter the password length of the password to generate (4-inf).
+You can specify the which characters should get generated. You can choose between Lower- and Uppercase letters, numbers and special characters.
+If no password (except for the 'G' entered before) is specified it's going to generate a password. For that it needs to have a password_length specified.
+
+It will put a new entry at the first free index inbetween all indices.
 
 ## Remove
 The next feature is the remove feature.
 It can be used to delete an entire entry specified by its index viewable in View mode.
 It will not ask for a conformation.
 The index will be deleted and will never be given to any entry ever again as already mentioned in the Add feature.
+
+## Edit
+The edit feature allows you to modify specific fields of an existing entry.
+To use this feature, you need to provide the index of the entry you want to edit. After that
+specify the field you want to edit, and then enter the new value for that field.
+
+The Entry will still have the same Index after the edit and the entries will still be shown in a rising order.
