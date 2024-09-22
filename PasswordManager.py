@@ -169,6 +169,9 @@ def remove(index_to_remove: int) -> None:
     if entries is None:
         print("There are no entries in database")
         return None
+    if index_to_remove not in entries.keys():
+        print(f"Index {index_to_remove} does not exist")
+        return None
 
     # removes specified entry.
     del entries[index_to_remove]
@@ -185,6 +188,14 @@ def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
         raise Exception("Found column in string. Columns are not supported.")
 
     entries = get_entries()
+
+    if entries is None:
+        print("There are no entries in database")
+        return None
+    if index_to_edit not in entries.keys():
+        print(f"Index {index_to_edit} does not exist")
+        return None
+
     if selected_field[0].lower() == "t":
         remove(index_to_edit)
         add(sticky_index=index_to_edit, title=new_field_value, username=entries[index_to_edit][1], password=entries[index_to_edit][2])
@@ -283,30 +294,30 @@ def main() -> None:
             password = input("Password ['G' to generate]: ")
             if password == "G":
                 if input("Configure password generation? [y/n]: ").lower() == "y":
-                    characters_must_occur_once_bool: bool = True
-                    if input("Force at least one occurrences of above characters? [y/n]: ").lower() == "y":
-                        characters_must_occur_once_bool = True
-
+                    characters_must_occur_once_bool: bool = False
                     generate_letters: bool = False
                     generate_numbers: bool = False
                     generate_special_characters: bool = False
-
-                    if not generate_letters and not generate_numbers and not generate_special_characters:
-                        raise Exception("Cannot generate a password without characters.")
 
                     if input("Enable the generation of letters (lowercase and uppercase)? [y/n]: ").lower() == "y":
                         generate_letters = True
                     if input("Enable the generation of numbers? [y/n]: ").lower() == "y":
                         generate_numbers = True
-                    if input(
-                            "Enable the generation of special characters? [y/n]: ").lower() == "y":
+                    if input("Enable the generation of special characters? [y/n]: ").lower() == "y":
                         generate_special_characters = True
+                    if input("Force at least one occurrences of above characters? [y/n]: ").lower() == "y":
+                        characters_must_occur_once_bool = True
+
+                    if not generate_letters and not generate_numbers and not generate_special_characters:
+                        raise Exception("Cannot generate a password without characters.")
 
                     while True:
                         generate_password_length: str = input("Enter password length [4-inf]: ")
-                        if generate_password_length.isdigit() and len(generate_password_length) >= 2:
-                            index, used_password = add(title=title, username=username, password_length=int(generate_password_length), allow_letters=generate_letters, allow_numbers=generate_numbers, allow_special=generate_special_characters, force_characters_occurring_at_least_once=characters_must_occur_once_bool)
-                            break
+                        if generate_password_length.isdigit():
+                            generate_password_length: int = int(generate_password_length)
+                            if generate_password_length > 1:
+                                index, used_password = add(title=title, username=username, password_length=int(generate_password_length), allow_letters=generate_letters, allow_numbers=generate_numbers, allow_special=generate_special_characters, force_characters_occurring_at_least_once=characters_must_occur_once_bool)
+                                break
                 else:
                     generate_password_length: str = input("Enter password length [4-inf]: ")
                     if generate_password_length.isdigit() and len(generate_password_length) >= 2:
