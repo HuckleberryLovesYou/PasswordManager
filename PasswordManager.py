@@ -17,10 +17,17 @@ import PasswordGenerator
 from tkinter.filedialog import askopenfilename
 import PasswordManagerCryptography
 import argparse
+import base64
 
-global_filename: str = "password.txt"
+global_filename: str = ""
 
-def get_filepath() -> tuple[str, bool]:
+
+def is_file_empty(filename):
+    return stat(filename).st_size == 0
+
+
+
+def get_filepath() -> tuple[str, bool]: # TODO: PasswordManagerCryptography doesn't get updated of new state of global_filename resulting in having to select database twice.'
     """
     This function prompts the user to select a .txt file using a gui file dialog imported from tkinter.filedialog
     It then returns the absolute path of the selected database and a boolean with True if the file exists and False otherwise.
@@ -39,15 +46,21 @@ def get_filepath() -> tuple[str, bool]:
         :returns: bool: True if the database exists or False if it does not exist.
         """
         if exists(filepath):
-            print("Database found")
+
             return True
         else:
             print("No such database in directory")
             return False
 
     global global_filename
-    global_filename = askopenfilename(title="Select database or create a new one:", filetypes=[("Text files" , "*.txt")])
-    return global_filename, is_real_file(global_filename)
+    if global_filename != "":
+        return global_filename, is_real_file(global_filename)
+    else:
+        global_filename = askopenfilename(title="Select database or create a new one:", filetypes=[("Text files" , "*.txt")])
+        database_found = is_real_file(global_filename)
+        if database_found:
+            print("Database found")
+        return global_filename, database_found
 
 
 def get_entries() -> dict[int, list[str]] | None:
@@ -67,8 +80,19 @@ def get_entries() -> dict[int, list[str]] | None:
             return None
         for line in database_lines:
             index, title, username, password = line.split(":")
-            entry_dict[int(index)] = [title, username, password]  # converts index to an integer to be sorted correctly in the next line
-    return dict(sorted(entry_dict.items()))  # returns a dictionary sorted be the entire key of type int and the corresponding title, username and password
+            # AI
+            title_bytes = bytes(title[2:-1].strip(), 'utf-8')
+            username_bytes = bytes(username[2:-1].strip(), 'utf-8')
+            password_bytes = bytes(password[2:-1].strip(), 'utf-8')
+
+            decoded_title = title_bytes.decode()
+            decoded_username = username_bytes.decode()
+            decoded_password = password_bytes.decode()
+            decoded_title = str(base64.b64decode(decoded_title))
+            decoded_username = str(base64.b64decode(decoded_username))
+            decoded_password = str(base64.b64decode(decoded_password))
+            entry_dict[int(index)] = [decoded_title[2:-1], decoded_username[2:-1], decoded_password[2:-1]]  # converts index to an integer to be sorted correctly in the next line
+    return dict(sorted(entry_dict.items()))  # returns a dictionary sorted be the key of type int and the corresponding title, username and password
 
 
 def view() -> dict[int, list[str]] | None:
@@ -118,7 +142,6 @@ def add(title: str, username: str, password: str | None = None, password_length:
     :except ValueError: If the value in password_length is not convertible to an integer.
     :except Exception: If a column was found in one of the string inputs of this function, since it is the slice character in the database or the password_length was not specified, even though password is not specified as well.
     """
-    # checks if new entry has a column in it since it is the slice character.
 
     # generates a password according to switches if it was not provided.
     if password is None:
@@ -126,22 +149,14 @@ def add(title: str, username: str, password: str | None = None, password_length:
             print("The password length must be specified if password is not specified.")
             return None
         else:
-            if title.count(":") != 0 or username.count(":") != 0:
-                print("Found column in string. Columns are not supported.")
-                return None
-
             try:
                 password_length = int(password_length)
                 password = PasswordGenerator.generate_password(password_length, letters=allow_letters, numbers=allow_numbers, special=allow_special, characters_occurring_at_least_once=force_characters_occurring_at_least_once)
             except ValueError:
                 print(f"Expected type int for password_length but got {type(password_length)} instead")
                 return None
-    else:
-        if title.count(":") != 0 or username.count(":") != 0 or password.count(":") != 0:
-            print("Found column in string. Columns are not supported.")
-            return None
 
-    # gets index to assign to new entry
+    # gets index to assign to new entry if no sticky index is specified
     if sticky_index is None:
         entries = get_entries()
         if entries is not None:
@@ -156,15 +171,20 @@ def add(title: str, username: str, password: str | None = None, password_length:
     else:
         index: int = sticky_index
 
+    #encodes inputs to base64
+    encoded_title = base64.b64encode(title.encode('utf-8'))
+    encoded_username = base64.b64encode(username.encode('utf-8'))
+    encoded_password = base64.b64encode(password.encode('utf-8'))
+
     # write new entry to database
     with open(global_filename, "a") as database:
         # adds a new line character only if an entry is actually added and not only edited
         if sticky_index is None:
-            database.write(f"{index}:{title}:{username}:{password}\n")
+            database.write(f"{index}:{encoded_title}:{encoded_username}:{encoded_password}\n")
         else:
-            database.write(f"{index}:{title}:{username}:{password}")
+            database.write(f"{index}:{encoded_title}:{encoded_username}:{encoded_password}")
     print(f"Entry added at index {index}")
-    return index, password
+    return index, password # returns not encoded password
 
 
 
@@ -183,15 +203,16 @@ def remove(index_to_remove: int) -> None:
     # overwrites database with all entries except the removed entry.
     with open(global_filename, "w") as database:
         for index, value in entries.items():
-            print(f"{index}:{value[0]}:{value[1]}:{value[2]}", file=database, end="")
+            # encodes inputs to base64
+            encoded_title = base64.b64encode(value[0].encode('utf-8'))
+            encoded_username = base64.b64encode(value[1].encode('utf-8'))
+            encoded_password = base64.b64encode(value[2].encode('utf-8'))
+            # writes new entry to database
+            print(f"{index}:{encoded_title}:{encoded_username}:{encoded_password}", file=database, end="\n")
     print(f"Index {index_to_remove} removed successfully")
 
 
 def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
-    if new_field_value.count(":") != 0:
-        print("Found column in string. Columns are not supported.")
-        return None
-
     entries = get_entries()
 
     if entries is None:
@@ -251,7 +272,7 @@ def main() -> None:
                     mode = "remove"
                 else:
                     print("No mode specified or invalid mode selected.")
-                    quit()
+                    encrypt_and_quit("No mode specified or invalid mode selected.")
             else:
                 mode = input("Choose mode [view/add/remove/edit/q to quit]: ").lower()
 
