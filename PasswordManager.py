@@ -392,6 +392,7 @@ def main() -> None:
 
     def handle_database_cryptography():
         while True:
+            salt = PasswordManagerCryptography.Salt().get_salt()
             if cli_args_given:
                 master_password: str = args.master_password
             else:
@@ -434,11 +435,12 @@ def main() -> None:
 
 
 
-    for _ in range(3):
+    while True:
         filepath, database_found = get_filepath()
         if database_found:
-            if stat(filepath).st_size == 0: # checks if selected database's size in bytes is 0 bytes.
+            if is_file_empty(filepath): # checks if selected database's size is 0 bytes.
                 print("Database selected is empty, setting new master password")
+                PasswordManagerCryptography.Salt().get_salt()
                 if cli_args_given:
                     master_password: str = args.master_password
                 else:
