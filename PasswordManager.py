@@ -92,6 +92,27 @@ def get_entries() -> dict[int, list[str]] | None:
             decoded_username = str(base64.b64decode(decoded_username))
             decoded_password = str(base64.b64decode(decoded_password))
             entry_dict[int(index)] = [decoded_title[2:-1], decoded_username[2:-1], decoded_password[2:-1]]  # converts index to an integer to be sorted correctly in the next line
+        line_count: int = 0
+        try:
+            for line in database_lines:
+                line_count += 1
+                index, title, username, password = line.split(":")
+                # AI
+                title_bytes = bytes(title[2:-1].strip(), 'utf-8')
+                username_bytes = bytes(username[2:-1].strip(), 'utf-8')
+                password_bytes = bytes(password[2:-1].strip(), 'utf-8')
+
+                decoded_title = title_bytes.decode()
+                decoded_username = username_bytes.decode()
+                decoded_password = password_bytes.decode()
+                decoded_title = str(base64.b64decode(decoded_title))
+                decoded_username = str(base64.b64decode(decoded_username))
+                decoded_password = str(base64.b64decode(decoded_password))
+                entry_dict[int(index)] = [decoded_title[2:-1], decoded_username[2:-1], decoded_password[2:-1]]  # converts index to an integer to be sorted correctly in the next line
+        except ValueError as e:
+            print(f"Error occurred while parsing the database: ValueError: {e}")
+            print(f"Error occurred in line {line_count + 1}")
+            return None
     return dict(sorted(entry_dict.items()))  # returns a dictionary sorted be the key of type int and the corresponding title, username and password
 
 
