@@ -18,50 +18,34 @@ from tkinter.filedialog import askopenfilename
 import PasswordManagerCryptography
 import argparse
 import base64
-
-global_filename: str = ""
+from Config import Config
 
 
 def is_file_empty(filename):
     return stat(filename).st_size == 0
 
 
-
-def get_filepath() -> tuple[str, bool]: # TODO: PasswordManagerCryptography doesn't get updated of new state of global_filename resulting in having to select database twice.'
+def is_file_found(filepath) -> bool:
     """
-    This function prompts the user to select a .txt file using a gui file dialog imported from tkinter.filedialog
-    It then returns the absolute path of the selected database and a boolean with True if the file exists and False otherwise.
+    Checks if the specified path exists and returns a boolean indicating whether it exists or not.
 
-    :param: None
+    :param filepath: This is the path that gets checked if it exists.
+    :type filepath: str
 
-    :returns:  tuple[str, bool]: A tuple containing the absolute path of the selected file and a boolean indicating whether the file exists.
+    :returns: bool: True if the database exists or False if it does not exist.
     """
-    def is_real_file(filepath):
-        """
-        Checks if the specified path exists and returns a boolean indicating whether it exists or not.
-
-        :param filepath: This is the path that gets checked if it exists.
-        :type filepath: str
-
-        :returns: bool: True if the database exists or False if it does not exist.
-        """
-        if exists(filepath):
-
-            return True
-        else:
-            print("No such database in directory")
-            return False
-
-    global global_filename
-    if global_filename != "":
-        return global_filename, is_real_file(global_filename)
+    if exists(filepath):
+        print("Database found")
+        return True
     else:
-        global_filename = askopenfilename(title="Select database or create a new one:", filetypes=[("Text files" , "*.txt")])
-        database_found = is_real_file(global_filename)
-        if database_found:
-            print("Database found")
-        return global_filename, database_found
+        print("No such database in directory")
+        return False
 
+
+def get_filepath() -> str:
+    if Config.global_filename == "":
+        Config.global_filename = askopenfilename(title="Select database or create a new one:", filetypes=[("Text files", "*.txt")])
+    return Config.global_filename
 
 def get_entries() -> dict[int, list[str]] | None:
     """
@@ -73,25 +57,11 @@ def get_entries() -> dict[int, list[str]] | None:
     :rtype: dict[int, list[str]] | None
     """
     entry_dict = {}
-    with open(global_filename, "r") as database:
+    with open(Config.global_filename, "r") as database:
         database_lines = database.readlines()
         if len(database_lines) == 0:
             print("There are no entries in your database")
             return None
-        for line in database_lines:
-            index, title, username, password = line.split(":")
-            # AI
-            title_bytes = bytes(title[2:-1].strip(), 'utf-8')
-            username_bytes = bytes(username[2:-1].strip(), 'utf-8')
-            password_bytes = bytes(password[2:-1].strip(), 'utf-8')
-
-            decoded_title = title_bytes.decode()
-            decoded_username = username_bytes.decode()
-            decoded_password = password_bytes.decode()
-            decoded_title = str(base64.b64decode(decoded_title))
-            decoded_username = str(base64.b64decode(decoded_username))
-            decoded_password = str(base64.b64decode(decoded_password))
-            entry_dict[int(index)] = [decoded_title[2:-1], decoded_username[2:-1], decoded_password[2:-1]]  # converts index to an integer to be sorted correctly in the next line
         line_count: int = 0
         try:
             for line in database_lines:
@@ -198,7 +168,7 @@ def add(title: str, username: str, password: str | None = None, password_length:
     encoded_password = base64.b64encode(password.encode('utf-8'))
 
     # write new entry to database
-    with open(global_filename, "a") as database:
+    with open(Config.global_filename, "a") as database:
         # adds a new line character only if an entry is actually added and not only edited
         if sticky_index is None:
             database.write(f"{index}:{encoded_title}:{encoded_username}:{encoded_password}\n")
@@ -222,7 +192,7 @@ def remove(index_to_remove: int) -> None:
     del entries[index_to_remove]
 
     # overwrites database with all entries except the removed entry.
-    with open(global_filename, "w") as database:
+    with open(Config.global_filename, "w") as database:
         for index, value in entries.items():
             # encodes inputs to base64
             encoded_title = base64.b64encode(value[0].encode('utf-8'))
@@ -274,7 +244,7 @@ def main() -> None:
 
         :returns: None
         """
-        PasswordManagerCryptography.encrypt_database(global_filename, PasswordManagerCryptography.convert_master_password_to_key(master_password))
+        PasswordManagerCryptography.encrypt_database(Config.global_filename, PasswordManagerCryptography.convert_master_password_to_key(master_password))
         print("Database encrypted")
         if len(error_message) > 0:
             print("Error occurred!")
@@ -445,7 +415,7 @@ def main() -> None:
                 if args.debug:
                     print("Enabling Debug Mode")
                     key = PasswordManagerCryptography.convert_master_password_to_key(args.master_password)  # needed because of new password entry
-                    PasswordManagerCryptography.encrypt_database(global_filename, key)
+                    PasswordManagerCryptography.encrypt_database(Config.global_filename, key)
                     print("Database encrypted")
                     print("Disabling debug mode")
             else:
@@ -454,10 +424,10 @@ def main() -> None:
                     print("Enter password to encrypt the database with")
                     master_password = input("Enter Master Password: ")
                     key = PasswordManagerCryptography.convert_master_password_to_key(master_password)  # needed because of new password entry
-                    PasswordManagerCryptography.encrypt_database(global_filename, key)
+                    PasswordManagerCryptography.encrypt_database(Config.global_filename, key)
                     print("File encrypted")
                     print("Disabling debug mode")
-            if PasswordManagerCryptography.decrypt_database(global_filename, key):
+            if PasswordManagerCryptography.decrypt_database(Config.global_filename, key):
                 print("Database decrypted")
                 print("If program is now closed without the use of 'q to quit', the database needs to be repaired in debug mode!")
                 return master_password
@@ -478,23 +448,24 @@ def main() -> None:
 
 
     while True:
-        filepath, database_found = get_filepath()
-        if database_found:
-            if is_file_empty(filepath): # checks if selected database's size is 0 bytes.
-                print("Database selected is empty, setting new master password")
-                PasswordManagerCryptography.Salt().get_salt()
-                if cli_args_given:
-                    master_password: str = args.master_password
-                else:
-                    master_password: str = input("Enter new Master Password: ")
-                print(f"Set {master_password} as new master password. Don't forget it!")
+        filepath = get_filepath()
+        if not is_file_found(filepath):
+            break
+        if is_file_empty(filepath): # checks if selected database's size is 0 bytes.
+            print("Database selected is empty, setting new master password")
+            PasswordManagerCryptography.Salt().get_salt()
+            if cli_args_given:
+                master_password: str = args.master_password
             else:
-                master_password: str = handle_database_cryptography()
-            #handles key generation, if debug mode was used in cli mode
-            if cli_args_given and args.debug:
-                encrypt_and_quit()
+                master_password: str = input("Enter new Master Password: ")
+            print(f"Set {master_password} as new master password. Don't forget it!")
+        else:
+            master_password: str = handle_database_cryptography()
+        #handles key generation, if debug mode was used in cli mode
+        if cli_args_given and args.debug:
+            encrypt_and_quit()
 
-            handle_mode_selection()
+        handle_mode_selection()
 
 
 

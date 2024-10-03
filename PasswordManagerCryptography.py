@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
 from os import urandom
 from os.path import dirname, join, basename, exists
+from Config import Config
 
 import PasswordManager
 
@@ -26,7 +27,7 @@ global_salt: bytes = b""
 class Salt:
     def __init__(self):
         self.salt: bytes = b""
-        self.database_filename: str = PasswordManager.get_filepath()[0]
+        self.database_filename: str = Config.global_filename
         self.salt_filename: str = self.get_salt_filepath()
         self.is_salt_found_var: bool = False
 
@@ -48,7 +49,7 @@ class Salt:
             return self.salt
 
     def get_salt_filepath(self) -> str:
-        self.salt_filename = join(dirname(PasswordManager.get_filepath()[0]), f"{basename(PasswordManager.get_filepath()[0])[:4]}_salt.log")
+        self.salt_filename = join(dirname(self.database_filename), f"{basename(self.database_filename)[:4]}_salt.log")
         return self.salt_filename
 
     def is_salt_found(self) -> bool:
