@@ -20,6 +20,15 @@ import argparse
 import base64
 from Config import Config
 
+def is_file_encrypted(filename):
+    with open(filename, "r") as file:
+        line = file.readline()
+        for i in range(len(line)):
+            if line[i] == ":":
+                print("Database not encrypted")
+                return False
+        print("File encrypted")
+        return True
 
 def is_file_empty(filename):
     return stat(filename).st_size == 0
@@ -395,7 +404,6 @@ def main() -> None:
         parser.add_argument("-p", "--password", action="store", dest="password", help="Set password of new entry [Needs --add, except --generate-password is specified]", type=str, required=False)
         parser.add_argument("-g", "--generate-password", action="store_true", dest="generate_password_boolean", help="Specify this to enable password generation [Needs --add]", required=False)
         parser.add_argument("-l", "--length", action="store", dest="length", help="Set the length for password generation for new entry [Needs --generate-password]", type=str, required=False)
-        parser.add_argument("-d", "--debug", action="store_true", dest="debug", help="Specify this to enable debug mode [Needs --master-password]", required=False)
 
 
 
@@ -408,28 +416,12 @@ def main() -> None:
             if cli_args_given:
                 master_password: str = args.master_password
             else:
-                master_password: str = input("Enter Master Password ['d' to enable debug]: ").lower()
+                master_password: str = input("Enter Master Password: ").lower()
             key = PasswordManagerCryptography.convert_master_password_to_key(master_password)
 
-            if cli_args_given:
-                if args.debug:
-                    print("Enabling Debug Mode")
-                    key = PasswordManagerCryptography.convert_master_password_to_key(args.master_password)  # needed because of new password entry
-                    PasswordManagerCryptography.encrypt_database(Config.global_filename, key)
-                    print("Database encrypted")
-                    print("Disabling debug mode")
-            else:
-                if master_password == "d":
-                    print("Enabling Debug Mode")
-                    print("Enter password to encrypt the database with")
-                    master_password = input("Enter Master Password: ")
-                    key = PasswordManagerCryptography.convert_master_password_to_key(master_password)  # needed because of new password entry
-                    PasswordManagerCryptography.encrypt_database(Config.global_filename, key)
-                    print("File encrypted")
-                    print("Disabling debug mode")
             if PasswordManagerCryptography.decrypt_database(Config.global_filename, key):
                 print("Database decrypted")
-                print("If program is now closed without the use of 'q to quit', the database needs to be repaired in debug mode!")
+                print("DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
                 return master_password
 
 
@@ -459,11 +451,17 @@ def main() -> None:
             else:
                 master_password: str = input("Enter new Master Password: ")
             print(f"Set {master_password} as new master password. Don't forget it!")
+        elif not is_file_encrypted(Config.global_filename): # master_password is needed for encrypting database the next time
+            while True:
+                master_password1: str = input("Enter Master Password used for encryption afterwards: ")
+                master_password2: str = input("Enter Master Password again: ")
+                if master_password1 == master_password2:
+                    master_password = master_password1
+                    break
+                else:
+                    print("Passwords do not match.\nPlease try again.")
         else:
             master_password: str = handle_database_cryptography()
-        #handles key generation, if debug mode was used in cli mode
-        if cli_args_given and args.debug:
-            encrypt_and_quit()
 
         handle_mode_selection()
 
