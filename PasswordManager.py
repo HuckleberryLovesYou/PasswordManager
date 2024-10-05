@@ -19,6 +19,7 @@ import PasswordManagerCryptography
 import argparse
 import base64
 from Config import Config
+from sys import argv
 
 def is_file_encrypted(filename) -> bool:
     with open(filename, "r") as file:
@@ -309,8 +310,12 @@ def main() -> None:
             if args.generate_password_boolean:
                 title = args.title
                 username = args.username
-                password_length = args.password_length
-                index, used_password = add(title, username, password_length)
+                password_length = input("Enter password length [4-inf]: ")
+                if password_length.isdigit():
+                    password_length = int(password_length)
+                else:
+                    return None
+                index, used_password = add(title, username, password=get_generated_password(password_length))
             else:
                 title = args.title
                 username = args.username
@@ -360,8 +365,7 @@ def main() -> None:
                 except TypeError:
                     return None
 
-        if used_password != password:
-            print("Your password is set to ", used_password)
+        print("Your password is set to ", used_password)
         if cli_args_given:
             encrypt_and_quit()
 
