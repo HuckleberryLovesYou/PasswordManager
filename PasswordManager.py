@@ -20,7 +20,7 @@ import argparse
 import base64
 from Config import Config
 
-def is_file_encrypted(filename):
+def is_file_encrypted(filename) -> bool:
     with open(filename, "r") as file:
         line = file.readline()
         for i in range(len(line)):
@@ -30,7 +30,7 @@ def is_file_encrypted(filename):
         print("File encrypted")
         return True
 
-def is_file_empty(filename):
+def is_file_empty(filename) -> bool:
     return stat(filename).st_size == 0
 
 
@@ -62,7 +62,7 @@ def get_entries() -> dict[int, list[str]] | None:
     It splits every line into index, title, username, password by the split character ':'. This is the reason, why no column is allowed in the entries.
     It sorts the entries by their index.
 
-    :return: A dictionary containing the entries, sorted by their keys, which are the indices of the corresponding value. Each entrie is represented as a list of strings, containing the title, username, and password in the value. If the database is empty it returns None.
+    :return: A dictionary containing the entries, sorted by their keys, which are the indices of the corresponding value. Each entry is represented as a list of strings, containing the title, username, and password in the value. If the database is empty it returns None.
     :rtype: dict[int, list[str]] | None
     """
     entry_dict = {}
@@ -165,7 +165,7 @@ def add(title: str, username: str, password: str | None = None, password_length:
                 if i not in existing_indices:
                     index: int = i
                     break
-        else:
+        else: # Needed if database is empty
             print("No indices were found")
             index: int = 1
     else:
@@ -261,7 +261,7 @@ def main() -> None:
         exit("User ended the program")
 
 
-    def handle_mode_selection():
+    def handle_mode_selection() -> None:
         while True:
             if cli_args_given:
                 if args.view_boolean:
@@ -410,7 +410,7 @@ def main() -> None:
         return parser.parse_args(), True
 
 
-    def handle_database_cryptography():
+    def handle_database_cryptography() -> str:
         while True:
             salt = PasswordManagerCryptography.Salt().get_salt()
             if cli_args_given:
