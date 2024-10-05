@@ -433,10 +433,18 @@ def main() -> None:
 
 
     cli_args_given = False
-    try:
-        args, cli_args_given = handle_cli_args()
-    except:
-        print("No arguments found\nUsing interactive mode instead")
+
+    # Check if any arguments were passed, excluding the program name
+    if len(argv) > 1:
+        try:
+            args = handle_cli_args()
+            cli_args_given = True
+        except SystemExit:  # This exception is raised when -h or --help is called and help is printed
+            quit("User used '-h/--help'")
+        except Exception as e:
+            print(f"Error parsing arguments: {e}\nUsing interactive mode instead")
+    else:
+        print("No arguments provided. Using interactive mode.")
 
 
 
