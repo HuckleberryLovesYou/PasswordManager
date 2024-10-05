@@ -98,31 +98,13 @@ def get_entries() -> dict[int, list[str]] | None:
 def view() -> dict[int, list[str]] | None:
     return get_entries()
 
-
-def add(title: str, username: str, password: str | None = None, password_length: int | None = None, sticky_index: int | None = None, allow_letters: bool = True, allow_numbers: bool = True, allow_special: bool = True, force_characters_occurring_at_least_once: bool = False) -> tuple[int, str] | None:
+def get_generated_password(password_length: int | str | None = None, allow_letters: bool = True, allow_numbers: bool = True, allow_special: bool = True, force_characters_occurring_at_least_once: bool = False) -> str | None:
     """
-    Used to add an entry to the database. It will determine the next available index.
-    It allows to force an index (e.g. if an edit on an entry is needed, the entry still has the same index as
-    before (it will be added at the end of the database, but the database gets sorted by indices at view anyway))
-
-    It can also generate a new password using PasswordGenerator.generate_password() function. This function supports many different  switches listed below.
-    If no password is specified, it will generate a new password with a length specified in password_length: int. It needs a length specified, otherwise it will error.
-
-
-    :param title: Used to specify the title of the new entry
-    :type title: str
-
-    :param username: Used to specify the username of the new entry
-    :type username: str
-
-    :param password: Used to specify the password of the new entry. If it is not provided, a password will be generated. For that value in password_length is required.
-    :type password: str | None
+    It generates a password using PasswordGenerator.generate_password() function. This function supports many different switches listed below.
+    If no password_length is specified, it will raise an error.
 
     :param password_length: The length of the generated password. Only used if password is not provided. If password is not provided then password_length is required.
-    :type password_length: int | None
-
-    :param sticky_index: The index to assign to the new entry. If not provided, an index will be automatically assigned. Used to keep same index after editing an entry.
-    :type sticky_index: int | None
+    :type password_length: int
 
     :param allow_letters: This specifies the switches send to the generate_password() function. Whether to allow letters(lower- and uppercase) in the generated password. Default is True.
     :type allow_letters: bool
@@ -136,25 +118,44 @@ def add(title: str, username: str, password: str | None = None, password_length:
     :param force_characters_occurring_at_least_once: This specifies the switches send to the generate_password() function. Whether to force at least one occurrence of each character type in the generated password. Default is False.
     :type force_characters_occurring_at_least_once: bool
 
-    :return: A tuple containing the index of the new entry and the password set for the new entry. If the entry was not added, returns None.
-    :rtype: tuple[int, str] | None
-
-    :except ValueError: If the value in password_length is not convertible to an integer.
-    :except Exception: If a column was found in one of the string inputs of this function, since it is the slice character in the database or the password_length was not specified, even though password is not specified as well.
+    :return: It returns the newly generated password as a string. If there was an error it  will return None.
+    :rtype: str | None
     """
+    # generates a password according to switches
+    if password_length is None:
+        print("No password length specified.")
+        return None
+    try:
+        password_length = int(password_length)
+    except ValueError:
+        print(f"Expected type int for password_length but got {type(password_length)} instead")
+        return None
+    return PasswordGenerator.generate_password(password_length, letters=allow_letters, numbers=allow_numbers, special=allow_special, characters_occurring_at_least_once=force_characters_occurring_at_least_once)
 
-    # generates a password according to switches if it was not provided.
+def add(title: str, username: str, password: str | None = None, sticky_index: int | None = None) -> tuple[int, str] | None:
+    """
+    Used to add an entry to the database. It will determine the next available index or
+    allows to force an index (e.g. if an edit on an entry is needed, the entry still has the same index as before)
+    It will ALWAYS add the entry at the end of the database.
+
+    :param title: Used to specify the title of the new entry
+    :type title: str
+
+    :param username: Used to specify the username of the new entry
+    :type username: str
+
+    :param password: Used to specify the password of the new entry. If it is not provided, a password will be generated. For that value in password_length is required.
+    :type password: str | None
+
+    :param sticky_index: The index to assign to the new entry. If not provided, an index will be automatically assigned. Used to keep same index after editing an entry.
+    :type sticky_index: int | None
+
+    :return: A tuple containing the index of the new entry and the not encoded password set for the new entry. If the entry was not added, returns None.
+    :rtype: tuple[int, str] | None
+    """
     if password is None:
-        if password_length is None:
-            print("The password length must be specified if password is not specified.")
-            return None
-        else:
-            try:
-                password_length = int(password_length)
-                password = PasswordGenerator.generate_password(password_length, letters=allow_letters, numbers=allow_numbers, special=allow_special, characters_occurring_at_least_once=force_characters_occurring_at_least_once)
-            except ValueError:
-                print(f"Expected type int for password_length but got {type(password_length)} instead")
-                return None
+        print("Please specify a password.")
+        return None
 
     # gets index to assign to new entry if no sticky index is specified
     if sticky_index is None:
