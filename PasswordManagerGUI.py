@@ -282,7 +282,7 @@ def root_gui():
                 password_length_slider_intro_label.destroy()
                 generate_and_add_button.destroy()
 
-                index, password = PasswordManager.add(title=title_entry.get(), username=username_entry.get(), password_length=password_length)
+                index, password = PasswordManager.add(title_entry.get(), username_entry.get(), password=PasswordManager.get_generated_password(password_length))
                 index_label = customtkinter.CTkLabel(master=add_frame, text=f"Added password at index {index}, with password {password}")
                 index_label.pack(side="bottom", padx=10, pady=30)
                 index_label.after(5000, index_label.destroy)

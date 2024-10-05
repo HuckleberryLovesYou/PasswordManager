@@ -345,12 +345,12 @@ def main() -> None:
                         if generate_password_length.isdigit():
                             generate_password_length: int = int(generate_password_length)
                             if generate_password_length > 1:
-                                index, used_password = add(title=title, username=username, password_length=int(generate_password_length), allow_letters=generate_letters, allow_numbers=generate_numbers, allow_special=generate_special_characters, force_characters_occurring_at_least_once=characters_must_occur_once_bool)
+                                index, used_password = add(title, username, password=get_generated_password(generate_password_length, allow_letters=generate_letters, allow_numbers=generate_numbers, allow_special=generate_special_characters, force_characters_occurring_at_least_once=characters_must_occur_once_bool))
                                 break
                 else:
                     generate_password_length: str = input("Enter password length [4-inf]: ")
                     if generate_password_length.isdigit() and len(generate_password_length) >= 2:
-                        index, used_password = add(title=title, username=username, password_length=int(generate_password_length))
+                        index, used_password = add(title, username, password=get_generated_password(generate_password_length))
                     else:
                         print("Please enter a valid password length")
                         return None
