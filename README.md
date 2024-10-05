@@ -3,8 +3,9 @@
 ## Usage
 It can be used with GUI or CLI. The Executable in the releases is always the GUI variant. If you want to use the CLI variant, you have to download the source.
  
-**If you don't have a .txt-database yet, you can create one by creating a .txt file in the Select File popup.
-After selecting it, enter the password that you want to set as a master password, and you are good to go.**
+**If you don't have a .txt-database yet, you can create one by creating a .txt file in the Select File popup.**
+
+After selecting it, enter the password that you want to set as a master password, and you are good to go.
 
 
 **See commit history [here](https://github.com/HuckleberryLovesYou/PasswordManager/branches)**
