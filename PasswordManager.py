@@ -396,19 +396,15 @@ def main() -> None:
 
     def handle_cli_args():
         parser = argparse.ArgumentParser(description="Password Manager shortcuts\nCommand example: python PasswordManager.py --master-password password --add --title test --username test --generate-password --length 8")
-        parser.add_argument("-m", "--master-password", required=True, action="store", dest="master_password", type=str, help="Enter Master Password for password database")
-        parser.add_argument("-v", "--view", action="store_true", dest="view_boolean", help="Used to set the mode to view and view database [Needs --master-password]", required=False)
-        parser.add_argument("-a", "--add", action="store_true", dest="add_boolean", help="Used to set the mode to add and add a new entry from database [Needs --master-password]", required=False)
-        parser.add_argument("-r", "--remove", action="store", dest="index_to_remove", help="Used to set the mode to remove and specify a index to remove [Needs --master-password]", required=False)
-        parser.add_argument("-t", "--title", action="store", dest="title", help="Set title of new entry [Needs --add]", type=str, required=False)
-        parser.add_argument("-u", "--username", action="store", dest="username", help="Set username of new entry [Needs --add]", type=str, required=False)
-        parser.add_argument("-p", "--password", action="store", dest="password", help="Set password of new entry [Needs --add, except --generate-password is specified]", type=str, required=False)
-        parser.add_argument("-g", "--generate-password", action="store_true", dest="generate_password_boolean", help="Specify this to enable password generation [Needs --add]", required=False)
-        parser.add_argument("-l", "--length", action="store", dest="length", help="Set the length for password generation for new entry [Needs --generate-password]", type=str, required=False)
-
-
-
-        return parser.parse_args(), True
+        parser.add_argument("-m", "--master-password", required=True, action="store", dest="master_password", type=str, help="Master password to access the database (required).")
+        parser.add_argument("-v", "--view", action="store_true", dest="view_boolean", help="View all saved entries (requires --master-password).")
+        parser.add_argument("-a", "--add", action="store_true", dest="add_boolean", help="Add a new entry (requires --master-password).")
+        parser.add_argument("-r", "--remove", action="store", dest="index_to_remove", type=int, help="Remove an entry by specifying its index (requires --master-password).")
+        parser.add_argument("-t", "--title", action="store", dest="title", type=str, help="Title for the new entry (requires --add).")
+        parser.add_argument("-u", "--username", action="store", dest="username", type=str, help="Username for the new entry (requires --add).")
+        parser.add_argument("-p", "--password", action="store", dest="password", type=str, help="Password for the new entry (requires --add, unless using --generate-password).")
+        parser.add_argument("-g", "--generate-password", action="store_true", dest="generate_password_boolean", help="Automatically generate a password (requires --add).")
+        return parser.parse_args()
 
 
     def handle_database_cryptography() -> str:
@@ -422,7 +418,8 @@ def main() -> None:
 
             if PasswordManagerCryptography.decrypt_database(Config.global_filename, key):
                 print("Database decrypted")
-                print("DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
+                if not cli_args_given:
+                    print("DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
                 return master_password
 
 
