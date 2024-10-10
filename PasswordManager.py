@@ -78,6 +78,7 @@ def get_entries() -> dict[int, list[str]] | None:
                 line_count += 1
                 index, title, username, password = line.split(":")
                 # AI
+
                 title_bytes = bytes(title[2:-1].strip(), 'utf-8')
                 username_bytes = bytes(username[2:-1].strip(), 'utf-8')
                 password_bytes = bytes(password[2:-1].strip(), 'utf-8')
@@ -177,6 +178,18 @@ def add(title: str, username: str, password: str | None = None, sticky_index: in
     encoded_title = base64.b64encode(title.encode('utf-8'))
     encoded_username = base64.b64encode(username.encode('utf-8'))
     encoded_password = base64.b64encode(password.encode('utf-8'))
+
+    # TODO: Find the bug, why it is sometimes adding a new line character and sometimes not!
+    # | Code below is temporary fix |
+    # adds a new line character to the end of the database file if it doesn't exist
+    with open(Config.database_filepath, "r") as file:
+        lines = file.readlines()
+    print(lines)
+    if not lines[-1][-1] == "\n":
+        print("Didn't found new line character")
+        lines[-1] += "\n"
+        with open(Config.database_filepath, "w") as file:
+            file.writelines(lines)
 
     # write new entry to database
     with open(Config.database_filepath, "a") as database:
