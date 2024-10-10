@@ -43,10 +43,11 @@ class Salt:
         else:
             print("Salt not found.")
             print("Please provide the salt in the same directory as your password database or generate a new one.")
-            if input("Confirm generation. [y/n]: ").lower == "y":
+            if input("Confirm generation. [y/n]: ").lower() == "y":
                 self.salt = urandom(16)
                 self.write_salt_to_file()
                 Config.salt = self.salt
+                print("Finished writing salt to file.")
                 return self.salt
             else:
                 return None
