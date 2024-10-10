@@ -53,9 +53,9 @@ def is_file_found(filepath) -> bool:
 
 
 def get_filepath() -> str:
-    if Config.global_filename == "":
-        Config.global_filename = askopenfilename(title="Select database or create a new one:", filetypes=[("Text files", "*.txt")])
-    return Config.global_filename
+    if Config.database_filepath == "":
+        Config.database_filepath = askopenfilename(title="Select database or create a new one:", filetypes=[("Text files", "*.txt")])
+    return Config.database_filepath
 
 def get_entries() -> dict[int, list[str]] | None:
     """
@@ -67,7 +67,7 @@ def get_entries() -> dict[int, list[str]] | None:
     :rtype: dict[int, list[str]] | None
     """
     entry_dict = {}
-    with open(Config.global_filename, "r") as database:
+    with open(Config.database_filepath, "r") as database:
         database_lines = database.readlines()
         if len(database_lines) == 0:
             print("There are no entries in your database")
@@ -179,7 +179,7 @@ def add(title: str, username: str, password: str | None = None, sticky_index: in
     encoded_password = base64.b64encode(password.encode('utf-8'))
 
     # write new entry to database
-    with open(Config.global_filename, "a") as database:
+    with open(Config.database_filepath, "a") as database:
         # adds a new line character only if an entry is actually added and not only edited
         if sticky_index is None:
             database.write(f"{index}:{encoded_title}:{encoded_username}:{encoded_password}\n")
@@ -203,7 +203,7 @@ def remove(index_to_remove: int) -> None:
     del entries[index_to_remove]
 
     # overwrites database with all entries except the removed entry.
-    with open(Config.global_filename, "w") as database:
+    with open(Config.database_filepath, "w") as database:
         for index, value in entries.items():
             # encodes inputs to base64
             encoded_title = base64.b64encode(value[0].encode('utf-8'))
@@ -255,7 +255,7 @@ def main() -> None:
 
         :returns: None
         """
-        PasswordManagerCryptography.encrypt_database(Config.global_filename, PasswordManagerCryptography.convert_master_password_to_key(master_password))
+        PasswordManagerCryptography.encrypt_database(Config.database_filepath, PasswordManagerCryptography.convert_master_password_to_key(master_password))
         print("Database encrypted")
         if len(error_message) > 0:
             print("Error occurred!")
@@ -393,7 +393,7 @@ def main() -> None:
         else:
             print("Please enter a valid index")
             return None
-        selected_field = input("Please select the field you want to edit [title/username/password]: ")
+        selected_field = input("Please select the field you want to edit title [t], username [u], password [p]: ")
         new_field_value = input("Please enter the new value of the field you want to edit: ")
         edit(index_to_edit, selected_field, new_field_value)
 
@@ -420,7 +420,7 @@ def main() -> None:
                 master_password: str = input("Enter Master Password: ").lower()
             key = PasswordManagerCryptography.convert_master_password_to_key(master_password)
 
-            if PasswordManagerCryptography.decrypt_database(Config.global_filename, key):
+            if PasswordManagerCryptography.decrypt_database(Config.database_filepath, key):
                 print("Database decrypted")
                 if not cli_args_given:
                     print("DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
@@ -461,7 +461,7 @@ def main() -> None:
             else:
                 master_password: str = input("Enter new Master Password: ")
             print(f"Set {master_password} as new master password. Don't forget it!")
-        elif not is_file_encrypted(Config.global_filename): # master_password is needed for encrypting database the next time
+        elif not is_file_encrypted(Config.database_filepath): # master_password is needed for encrypting database the next time
             while True:
                 master_password1: str = input("Enter Master Password used for encryption afterwards: ")
                 master_password2: str = input("Enter Master Password again: ")

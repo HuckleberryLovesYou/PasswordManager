@@ -22,23 +22,23 @@ from Config import Config
 
 import PasswordManager
 
-global_salt: bytes = b""
-
 class Salt:
     def __init__(self):
         self.salt: bytes = b""
-        self.database_filename: str = Config.global_filename
+        self.database_filename: str = Config.database_filepath
         self.salt_filename: str = self.get_salt_filepath()
         self.is_salt_found_var: bool = False
 
     def get_salt(self) -> bytes | None:
         if self.salt != b"":
+            Config.salt = self.salt
             return self.salt
         print("Salt var is empty")
 
         if self.is_salt_found():
             print("Salt found. Using it.")
             self.read_salt_from_file()
+            Config.salt = self.salt
             return self.salt
         else:
             print("Salt not found.")
@@ -46,12 +46,14 @@ class Salt:
             if input("Confirm generation. [y/n]: ").lower == "y":
                 self.salt = urandom(16)
                 self.write_salt_to_file()
+                Config.salt = self.salt
                 return self.salt
             else:
                 return None
 
     def get_salt_filepath(self) -> str:
         self.salt_filename = join(dirname(self.database_filename), f"{basename(self.database_filename)[:4]}_salt.log")
+        Config.salt_filepath = self.salt_filename
         return self.salt_filename
 
     def is_salt_found(self) -> bool:
@@ -84,7 +86,8 @@ def convert_master_password_to_key(user_master_password: str) -> bytes:
         iterations=100000,
         backend=default_backend()
     )
-    return urlsafe_b64encode(kdf.derive(user_master_password))
+    Config.key = urlsafe_b64encode(kdf.derive(user_master_password))
+    return Config.key
 
 
 def encrypt_database(filename: str, key: bytes) -> bool:

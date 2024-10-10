@@ -1,2 +1,5 @@
 class Config:
-    global_filename: str = ""
+    database_filepath: str = ""
+    salt_filepath: str = ""
+    salt: bytes = b""
+    key: bytes = b""
