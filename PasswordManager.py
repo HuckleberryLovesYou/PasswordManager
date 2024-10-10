@@ -46,10 +46,11 @@ def is_file_found(filepath) -> bool:
     """
     if exists(filepath):
         print("Database found")
-        return True
+        Config.is_database_found = True
+        return Config.is_database_found
     else:
         print("No such database in directory")
-        return False
+        return Config.is_database_found
 
 
 def get_filepath() -> str:
