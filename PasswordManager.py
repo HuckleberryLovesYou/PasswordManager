@@ -77,7 +77,6 @@ def get_entries() -> dict[int, list[str]] | None:
             for line in database_lines:
                 line_count += 1
                 index, title, username, password = line.split(":")
-                # AI
 
                 title_bytes = bytes(title[2:-1].strip(), 'utf-8')
                 username_bytes = bytes(username[2:-1].strip(), 'utf-8')
@@ -184,8 +183,7 @@ def add(title: str, username: str, password: str | None = None, sticky_index: in
     # adds a new line character to the end of the database file if it doesn't exist
     with open(Config.database_filepath, "r") as file:
         lines = file.readlines()
-    print(lines)
-    if not lines[-1][-1] == "\n":
+    if not lines[-1][-1] == "\n": # '\n' is one character here
         print("Didn't found new line character")
         lines[-1] += "\n"
         with open(Config.database_filepath, "w") as file:
@@ -268,7 +266,7 @@ def main() -> None:
 
         :returns: None
         """
-        PasswordManagerCryptography.encrypt_database(Config.database_filepath, PasswordManagerCryptography.convert_master_password_to_key(master_password))
+        PasswordManagerCryptography.encrypt_database(Config.database_filepath, Config.key)
         print("Database encrypted")
         if len(error_message) > 0:
             print("Error occurred!")
@@ -426,14 +424,14 @@ def main() -> None:
 
     def handle_database_cryptography() -> str:
         while True:
-            salt = PasswordManagerCryptography.Salt().get_salt()
+            PasswordManagerCryptography.Salt().get_salt()
             if cli_args_given:
                 master_password: str = args.master_password
             else:
                 master_password: str = input("Enter Master Password: ").lower()
-            key = PasswordManagerCryptography.convert_master_password_to_key(master_password)
+            PasswordManagerCryptography.convert_master_password_to_key(master_password)
 
-            if PasswordManagerCryptography.decrypt_database(Config.database_filepath, key):
+            if PasswordManagerCryptography.decrypt_database(Config.database_filepath, Config.key):
                 print("Database decrypted")
                 if not cli_args_given:
                     print("DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
@@ -484,7 +482,7 @@ def main() -> None:
                 else:
                     print("Passwords do not match.\nPlease try again.")
         else:
-            master_password: str = handle_database_cryptography()
+            handle_database_cryptography()
 
         handle_mode_selection()
 
