@@ -42,11 +42,13 @@ class Salt:
             return self.salt
         else:
             print("Salt not found.")
-            print("Generating a new salt.")
-            input("Confirm generation. [y/n]: ")
-            self.salt = urandom(16)
-            self.write_salt_to_file()
-            return self.salt
+            print("Please provide the salt in the same directory as your password database or generate a new one.")
+            if input("Confirm generation. [y/n]: ").lower == "y":
+                self.salt = urandom(16)
+                self.write_salt_to_file()
+                return self.salt
+            else:
+                return None
 
     def get_salt_filepath(self) -> str:
         self.salt_filename = join(dirname(self.database_filename), f"{basename(self.database_filename)[:4]}_salt.log")
