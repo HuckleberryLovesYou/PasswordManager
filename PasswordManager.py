@@ -266,7 +266,7 @@ def main() -> None:
 
         :returns: None
         """
-        PasswordManagerCryptography.encrypt_database(Config.database_filepath, Config.key)
+        PasswordManagerCryptography.encrypt_database()
         print("Database encrypted")
         if len(error_message) > 0:
             print("Error occurred!")
@@ -431,7 +431,7 @@ def main() -> None:
                 master_password: str = input("Enter Master Password: ").lower()
             PasswordManagerCryptography.convert_master_password_to_key(master_password)
 
-            if PasswordManagerCryptography.decrypt_database(Config.database_filepath, Config.key):
+            if PasswordManagerCryptography.decrypt_database():
                 print("Database decrypted")
                 if not cli_args_given:
                     print("DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
