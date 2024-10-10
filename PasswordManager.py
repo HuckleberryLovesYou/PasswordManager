@@ -181,13 +181,16 @@ def add(title: str, username: str, password: str | None = None, sticky_index: in
     # TODO: Find the bug, why it is sometimes adding a new line character and sometimes not!
     # | Code below is temporary fix |
     # adds a new line character to the end of the database file if it doesn't exist
-    with open(Config.database_filepath, "r") as file:
-        lines = file.readlines()
-    if not lines[-1][-1] == "\n": # '\n' is one character here
-        print("Didn't found new line character")
-        lines[-1] += "\n"
-        with open(Config.database_filepath, "w") as file:
-            file.writelines(lines)
+    try:
+        with open(Config.database_filepath, "r") as file:
+            lines = file.readlines()
+        if not lines[-1][-1] == "\n": # '\n' is one character here
+            print("Didn't found new line character")
+            lines[-1] += "\n"
+            with open(Config.database_filepath, "w") as file:
+                file.writelines(lines)
+    except IndexError:
+        pass
 
     # write new entry to database
     with open(Config.database_filepath, "a") as database:
