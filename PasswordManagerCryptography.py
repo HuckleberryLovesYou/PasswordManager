@@ -109,7 +109,10 @@ def encrypt_database(filepath: str = Config.database_filepath, key: bytes = Conf
 
         return True
     except:
-        print("Database already encrypted or invalid Key")
+        if Config.is_database_encrypted:
+            print("Database already encrypted")
+        else:
+            print("Invalid Key")
         return False
 
 def decrypt_database(filepath: str = Config.database_filepath, key: bytes = Config.key) -> bool:
@@ -129,7 +132,10 @@ def decrypt_database(filepath: str = Config.database_filepath, key: bytes = Conf
             database.write(decrypted_database)
         return True
     except:
-        print("Database already decrypted or invalid Key")
+        if not Config.is_database_encrypted:
+            print("Database already decrypted")
+        else:
+            print("Invalid Key")
         return False
 
 
