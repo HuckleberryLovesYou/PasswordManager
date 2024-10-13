@@ -27,9 +27,11 @@ def is_file_encrypted(filename) -> bool:
         for i in range(len(line)):
             if line[i] == ":":
                 print("Database not encrypted")
-                return False
+                Config.is_database_encrypted = False
+                return Config.is_database_encrypted
         print("File encrypted")
-        return True
+        Config.is_database_encrypted = True
+        return Config.is_database_encrypted
 
 def is_file_empty(filename) -> bool:
     return stat(filename).st_size == 0
@@ -56,6 +58,7 @@ def is_file_found(filepath) -> bool:
 def get_filepath() -> str:
     if Config.database_filepath == "":
         Config.database_filepath = askopenfilename(title="Select database or create a new one:", filetypes=[("Text files", "*.txt")])
+        is_file_found(Config.database_filepath)
     return Config.database_filepath
 
 def get_entries() -> dict[int, list[str]] | None:
