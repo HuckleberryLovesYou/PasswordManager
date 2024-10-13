@@ -38,19 +38,22 @@ class Salt:
         if self.is_salt_found():
             print("Salt found. Using it.")
             self.read_salt_from_file()
-            Config.salt = self.salt
             return self.salt
         else:
             print("Salt not found.")
             print("Please provide the salt in the same directory as your password database or generate a new one.")
             if input("Confirm generation. [y/n]: ").lower() == "y":
-                self.salt = urandom(16)
-                self.write_salt_to_file()
-                Config.salt = self.salt
-                print("Finished writing salt to file.")
-                return self.salt
+                return self.generate_salt()
             else:
                 return None
+
+
+    def generate_salt(self) -> bytes:
+        self.salt = urandom(16)
+        self.write_salt_to_file()
+        Config.salt = self.salt
+        print("Finished writing salt to file.")
+        return self.salt
 
     def get_salt_filepath(self) -> str:
         self.salt_filename = join(dirname(self.database_filename), f"{basename(self.database_filename)[:4]}_salt.log")
@@ -64,9 +67,11 @@ class Salt:
         else:
             return False
 
-    def read_salt_from_file(self):
+    def read_salt_from_file(self) -> bytes:
         with open(self.salt_filename, "rb") as salt_file:
             self.salt = salt_file.read()
+            Config.salt = self.salt
+        return self.salt
 
     def write_salt_to_file(self):
         with open(self.salt_filename, "wb") as salt_file:
