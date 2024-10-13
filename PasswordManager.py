@@ -254,30 +254,28 @@ def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
     print("Successfully edited entry")
 
 
+def encrypt_and_quit(error_message="") -> None:
+    """
+    Encrypt the password database file using the provided master password.
+
+    If an error message is provided, print it and raise an exception.
+    Finally, exit the program.
+
+    :param error_message: An optional error message to be printed before exiting the program. Default is an empty string.
+    :type error_message: str
+
+    :raises: Exception: If an error message is provided.
+
+    :returns: None
+    """
+    PasswordManagerCryptography.encrypt_database()
+    print("Database encrypted")
+    if len(error_message) > 0:
+        print("Error occurred!")
+        raise Exception(f"{error_message}")
+    exit("User ended the program")
 
 def main() -> None:
-    def encrypt_and_quit(error_message="") -> None:
-        """
-        Encrypt the password database file using the provided master password.
-
-        If an error message is provided, print it and raise an exception.
-        Finally, exit the program.
-
-        :param error_message: An optional error message to be printed before exiting the program. Default is an empty string.
-        :type error_message: str
-
-        :raises: Exception: If an error message is provided.
-
-        :returns: None
-        """
-        PasswordManagerCryptography.encrypt_database()
-        print("Database encrypted")
-        if len(error_message) > 0:
-            print("Error occurred!")
-            raise Exception(f"{error_message}")
-        exit("User ended the program")
-
-
     def handle_mode_selection() -> None:
         while True:
             if cli_args_given:
