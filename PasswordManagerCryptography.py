@@ -32,18 +32,19 @@ class Salt:
         if self.salt != b"":
             Config.salt = self.salt
             return self.salt
-        print("Salt var is empty")
+        print("I: Salt variable is empty")
 
         if self.is_salt_found():
-            print("Salt found. Using it.")
+            print("I: Salt found. Using it.")
             self.read_salt_from_file()
             return self.salt
         else:
-            print("Salt not found.")
-            print("Please provide the salt in the same directory as your password database or generate a new one.")
+            print("W: Salt not found.")
+            print("W: Please provide the salt in the same directory as your password database or generate a new one.")
             if input("Confirm generation. [y/n]: ").lower() == "y":
                 return self.generate_salt()
             else:
+                print("E: not generated salt.")
                 return None
 
 
@@ -51,7 +52,6 @@ class Salt:
         self.salt = urandom(16)
         self.write_salt_to_file()
         Config.salt = self.salt
-        print("Finished writing salt to file.")
         return self.salt
 
     def get_salt_filepath(self) -> str:
@@ -75,13 +75,16 @@ class Salt:
     def write_salt_to_file(self):
         with open(self.salt_filename, "wb") as salt_file:
             salt_file.write(self.salt)
-        print("Finished writing.")
+        print("I: Finished writing salt")
 
 
 
 def convert_master_password_to_key(user_master_password: str) -> bytes:
     """Takes string user_master_password and returns the generated key as bytes.
-    It is needed for encryption and decryption using encrypt_database() and decrypt_database()"""
+    It is needed for encryption and decryption using encrypt_database() and decrypt_database()
+
+    The key generated gets stored in Config.key: bytes, and also returned by the function.
+    """
     user_master_password = user_master_password.encode()
 
     kdf: PBKDF2HMAC = PBKDF2HMAC(
@@ -110,7 +113,7 @@ def encrypt_database(filepath: str = Config.database_filepath, key: bytes = Conf
 
         with open(filepath, "wb") as file:
             file.write(encrpyted_database)
-
+        print("I: Database encrypted")
         return True
     except:
         if Config.is_database_encrypted:
@@ -134,6 +137,7 @@ def decrypt_database(filepath: str = Config.database_filepath, key: bytes = Conf
 
         with open(filepath, "wb") as database:
             database.write(decrypted_database)
+        print("I: Database encrypted")
         return True
     except:
         if not Config.is_database_encrypted:
@@ -144,13 +148,13 @@ def decrypt_database(filepath: str = Config.database_filepath, key: bytes = Conf
 
 
 def main() -> None:
-    # DEBUG
+    pass
     # password: str = input("!!!DEBUG!!!\nEnter master password to encrypt database: ")
     # PasswordManager.get_filepath()
     # print(PasswordManager.get_global_filename())
     # print(PasswordManager.is_file_empty(PasswordManager.get_global_filename()))
-    salt = Salt()
-    print(salt.get_salt())
+    # salt = Salt()
+    # print(salt.get_salt())
     # This is needed, if the program is quit - without the use of 'q to quit', while the database is already encrypted
     # encrypt_database(filename, convert_master_password_to_key(password))
     # Test password convertion
