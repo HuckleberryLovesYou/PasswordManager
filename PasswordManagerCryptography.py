@@ -25,7 +25,6 @@ import PasswordManager
 class Salt:
     def __init__(self):
         self.salt: bytes = b""
-        self.database_filename: str = Config.database_filepath
         self.salt_filename: str = self.get_salt_filepath()
         self.is_salt_found_var: bool = False
 
@@ -56,7 +55,7 @@ class Salt:
         return self.salt
 
     def get_salt_filepath(self) -> str:
-        self.salt_filename = join(dirname(self.database_filename), f"{basename(self.database_filename)[:4]}_salt.log")
+        self.salt_filename = join(dirname(Config.database_filepath), f"{basename(Config.database_filepath)[:4]}_salt.log")
         Config.salt_filepath = self.salt_filename
         return self.salt_filename
 
