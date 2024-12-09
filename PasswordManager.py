@@ -268,12 +268,12 @@ def encrypt_and_quit(error_message="") -> None:
 
     :raises: Exception: If an error message is provided.
     """
-    PasswordManagerCryptography.encrypt_database()
-    print("Database encrypted")
     if len(error_message) > 0:
         print("Error occurred!")
         raise Exception(f"{error_message}")
-    exit("User ended the program")
+
+    if PasswordManagerCryptography.encrypt_database(Config.database_filepath, Config.key):
+        quit("User ended the program")
 
 def main() -> None:
     def handle_mode_selection() -> None:
@@ -433,8 +433,7 @@ def main() -> None:
                 master_password: str = input("Enter Master Password: ").lower()
             PasswordManagerCryptography.convert_master_password_to_key(master_password)
 
-            if PasswordManagerCryptography.decrypt_database():
-                print("Database decrypted")
+            if PasswordManagerCryptography.decrypt_database(Config.database_filepath, Config.key):
                 if not cli_args_given:
                     print("I: DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
                 return master_password
@@ -480,7 +479,7 @@ def main() -> None:
                 master_password1: str = input("Enter Master Password: ")
                 master_password2: str = input("Enter Master Password again: ")
                 if master_password1 == master_password2:
-                    master_password = master_password1
+                    PasswordManagerCryptography.convert_master_password_to_key(master_password1)
                     break
                 else:
                     print("E: Passwords do not match.\nPlease try again.")
