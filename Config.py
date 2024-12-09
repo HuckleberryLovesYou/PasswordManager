@@ -1,4 +1,3 @@
-from customtkinter import CTkFrame
 
 class Config:
     database_filepath: str = ""
