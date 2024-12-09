@@ -472,6 +472,7 @@ def main() -> None:
                 master_password: str = args.master_password
             else:
                 master_password: str = input("Enter new Master Password: ")
+                PasswordManagerCryptography.convert_master_password_to_key(master_password)
             print(f"I: Set {master_password} as new master password. Don't forget it!")
         elif not is_file_encrypted(Config.database_filepath): # master_password is needed for encrypting database the next time
             while True:
