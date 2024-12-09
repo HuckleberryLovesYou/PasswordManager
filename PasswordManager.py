@@ -26,10 +26,10 @@ def is_file_encrypted(filename) -> bool:
         line = file.readline()
         for i in range(len(line)):
             if line[i] == ":":
-                print("Database not encrypted")
+                # print("Database not encrypted")
                 Config.is_database_encrypted = False
                 return Config.is_database_encrypted
-        print("File encrypted")
+        # print("File encrypted")
         Config.is_database_encrypted = True
         return Config.is_database_encrypted
 
@@ -47,11 +47,11 @@ def is_file_found(filepath) -> bool:
     :returns: bool: True if the database exists or False if it does not exist.
     """
     if exists(filepath):
-        print("Database found")
+        print("I: Database found")
         Config.is_database_found = True
         return Config.is_database_found
     else:
-        print("No such database in directory")
+        print("E: No such database in directory")
         return Config.is_database_found
 
 
@@ -74,7 +74,7 @@ def get_entries() -> dict[int, list[str]] | None:
     with open(Config.database_filepath, "r") as database:
         database_lines = database.readlines()
         if len(database_lines) == 0:
-            print("There are no entries in your database")
+            print("I: There are no entries in your database")
             return None
         line_count: int = 0
         try:
@@ -94,8 +94,8 @@ def get_entries() -> dict[int, list[str]] | None:
                 decoded_password = str(base64.b64decode(decoded_password))
                 entry_dict[int(index)] = [decoded_title[2:-1], decoded_username[2:-1], decoded_password[2:-1]]  # converts index to an integer to be sorted correctly in the next line
         except ValueError as e:
-            print(f"Error occurred while parsing the database: ValueError: {e}")
-            print(f"Error occurred in line {line_count + 1}")
+            print(f"E: Error occurred while parsing the database: ValueError: {e}")
+            print(f"E: Error occurred in line {line_count + 1}")
             return None
     return dict(sorted(entry_dict.items()))  # returns a dictionary sorted be the key of type int and the corresponding title, username and password
 
@@ -128,12 +128,12 @@ def get_generated_password(password_length: int | str | None = None, allow_lette
     """
     # generates a password according to switches
     if password_length is None:
-        print("No password length specified.")
+        print("E: No password length specified.")
         return None
     try:
         password_length = int(password_length)
     except ValueError:
-        print(f"Expected type int for password_length but got {type(password_length)} instead")
+        print(f"E: Expected type int for password_length but got {type(password_length)} instead")
         return None
     return PasswordGenerator.generate_password(password_length, letters=allow_letters, numbers=allow_numbers, special=allow_special, characters_occurring_at_least_once=force_characters_occurring_at_least_once)
 
@@ -172,7 +172,7 @@ def add(title: str, username: str, password: str | None = None, sticky_index: in
                     index: int = i
                     break
         else: # Needed if database is empty
-            print("No indices were found")
+            print("I: No indices were found")
             index: int = 1
     else:
         index: int = sticky_index
@@ -189,7 +189,7 @@ def add(title: str, username: str, password: str | None = None, sticky_index: in
         with open(Config.database_filepath, "r") as file:
             lines = file.readlines()
         if not lines[-1][-1] == "\n": # '\n' is one character here
-            print("Didn't found new line character")
+            print("T: Didn't found new line character")
             lines[-1] += "\n"
             with open(Config.database_filepath, "w") as file:
                 file.writelines(lines)
@@ -203,7 +203,7 @@ def add(title: str, username: str, password: str | None = None, sticky_index: in
             database.write(f"{index}:{encoded_title}:{encoded_username}:{encoded_password}\n")
         else:
             database.write(f"{index}:{encoded_title}:{encoded_username}:{encoded_password}")
-    print(f"Entry added at index {index}")
+    print(f"I: Entry added at index {index}")
     return index, password # returns not encoded password
 
 
@@ -211,10 +211,10 @@ def add(title: str, username: str, password: str | None = None, sticky_index: in
 def remove(index_to_remove: int) -> None:
     entries: dict[int, list[str]] | None = get_entries()
     if entries is None:
-        print("There are no entries in database")
+        print("E: There are no entries in database")
         return None
     if index_to_remove not in entries.keys():
-        print(f"Index {index_to_remove} does not exist")
+        print(f"E: Index {index_to_remove} does not exist")
         return None
 
     # removes specified entry.
@@ -229,17 +229,17 @@ def remove(index_to_remove: int) -> None:
             encoded_password = base64.b64encode(value[2].encode('utf-8'))
             # writes new entry to database
             print(f"{index}:{encoded_title}:{encoded_username}:{encoded_password}", file=database, end="\n")
-    print(f"Index {index_to_remove} removed successfully")
+    print(f"I: Index {index_to_remove} removed successfully")
 
 
 def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
     entries = get_entries()
 
     if entries is None:
-        print("There are no entries in database")
+        print("E: There are no entries in database")
         return None
     if index_to_edit not in entries.keys():
-        print(f"Index {index_to_edit} does not exist")
+        print(f"E: Index {index_to_edit} does not exist")
         return None
 
     if selected_field[0].lower() == "t":
@@ -252,24 +252,21 @@ def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
         remove(index_to_edit)
         add(sticky_index=index_to_edit, title=entries[index_to_edit][0], username=entries[index_to_edit][1], password=new_field_value)
     else:
-        print("Selected field is not supported. Supported fields: title [t], username [u], password [p]")
+        print("E: Selected field is not supported. Supported fields: title [t], username [u], password [p]")
         return None
-    print("Successfully edited entry")
+    print("I: Successfully edited entry")
 
 
 def encrypt_and_quit(error_message="") -> None:
     """
     Encrypt the password database file using the provided master password.
 
-    If an error message is provided, print it and raise an exception.
-    Finally, exit the program.
+    If an error message is provided, print it and raise an exception. After that, exit the program.
 
-    :param error_message: An optional error message to be printed before exiting the program. Default is an empty string.
+    :param error_message: An optional error message to be printed before exiting the program.
     :type error_message: str
 
     :raises: Exception: If an error message is provided.
-
-    :returns: None
     """
     PasswordManagerCryptography.encrypt_database()
     print("Database encrypted")
@@ -289,7 +286,7 @@ def main() -> None:
                 elif args.index_to_remove is not None:
                     mode = "remove"
                 else:
-                    print("No mode specified or invalid mode selected.")
+                    print("E: No mode specified or invalid mode selected.")
                     encrypt_and_quit("No mode specified or invalid mode selected.")
             else:
                 mode = input("Choose mode [view/add/remove/edit/q to quit]: ").lower()
@@ -315,7 +312,7 @@ def main() -> None:
             for key in view_dict.keys():
                 print(f"{key}:\t\tTitle: {view_dict[key][0]}\tUsername: {view_dict[key][1]}\tPassword: {view_dict[key][2]}\n")
         except AttributeError:
-            print("No entries found in the database")
+            print("W: No entries found in the database")
 
         if cli_args_given:
             encrypt_and_quit()
@@ -381,7 +378,7 @@ def main() -> None:
                 except TypeError:
                     return None
 
-        print("Your password is set to ", used_password)
+        print("I: Your password is set to ", used_password)
         if cli_args_given:
             encrypt_and_quit()
 
@@ -396,7 +393,7 @@ def main() -> None:
             index_to_remove = int(index_to_remove)
             remove(index_to_remove)
         else:
-            print("Please enter a valid number")
+            print("E: Please enter a valid number")
 
         if cli_args_given:
             encrypt_and_quit()
@@ -407,7 +404,7 @@ def main() -> None:
         if index_to_edit.isdigit():
             index_to_edit = int(index_to_edit)
         else:
-            print("Please enter a valid index")
+            print("E: Please enter a valid index")
             return None
         selected_field = input("Please select the field you want to edit title [t], username [u], password [p]: ")
         new_field_value = input("Please enter the new value of the field you want to edit: ")
@@ -439,7 +436,7 @@ def main() -> None:
             if PasswordManagerCryptography.decrypt_database():
                 print("Database decrypted")
                 if not cli_args_given:
-                    print("DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
+                    print("I: DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
                 return master_password
 
 
@@ -457,11 +454,11 @@ def main() -> None:
             args = handle_cli_args()
             cli_args_given = True
         except SystemExit:  # This exception is raised when -h or --help is called and help is printed
-            quit("User used '-h/--help'")
+            quit("I: Exiting. User entered '-h/--help'")
         except Exception as e:
-            print(f"Error parsing arguments: {e}\nUsing interactive mode instead")
+            print(f"E: Error parsing arguments: {e}\nUsing interactive mode instead")
     else:
-        print("No arguments provided. Using interactive mode.")
+        print("I: No arguments provided. Using interactive mode.")
 
 
 
@@ -470,22 +467,23 @@ def main() -> None:
         if not is_file_found(filepath):
             break
         if is_file_empty(filepath): # checks if selected database's size is 0 bytes.
-            print("Database selected is empty, setting new master password")
+            print("I: Database selected is empty, setting new master password")
             PasswordManagerCryptography.Salt().get_salt()
             if cli_args_given:
                 master_password: str = args.master_password
             else:
                 master_password: str = input("Enter new Master Password: ")
-            print(f"Set {master_password} as new master password. Don't forget it!")
+            print(f"I: Set {master_password} as new master password. Don't forget it!")
         elif not is_file_encrypted(Config.database_filepath): # master_password is needed for encrypting database the next time
             while True:
-                master_password1: str = input("Enter Master Password used for encryption afterwards: ")
+                print("I: Since database wasn't encrypted after wrong exiting of the program, you have to enter a master password again,\nwhich will be the new master password used. Please always exit the program with 'q to quit'.")
+                master_password1: str = input("Enter Master Password: ")
                 master_password2: str = input("Enter Master Password again: ")
                 if master_password1 == master_password2:
                     master_password = master_password1
                     break
                 else:
-                    print("Passwords do not match.\nPlease try again.")
+                    print("E: Passwords do not match.\nPlease try again.")
         else:
             handle_database_cryptography()
 
