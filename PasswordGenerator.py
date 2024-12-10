@@ -1,21 +1,10 @@
-from random import randint
+from random import choice, randint
 from string import ascii_letters
 from string import digits
 from string import punctuation
 
-#Dependencies:
-#random
-#string.ascii_letters
-#string.digits
-#string.punctuation
-
 # DO NOT USE IT TO STORE ANY IMPORTANT DATA
 # THIS IS JUST A FUN PROJECT NOT MEANT TO BE USED
-
-LETTERS = ascii_letters #52 chars
-NUMBERS = digits #10 chars
-SPECIAL_CHARACTERS = punctuation
-
 
 def generate_password(password_length: int, letters=True, numbers=True, special=True, characters_occurring_at_least_once=True) -> str:
     """
@@ -35,11 +24,6 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
     :return: A random password that meets the specified criteria.
 
     :raises Exception: If the password length is less than the minimum required length. The minimum required length changes depending on the specified criteria in the function call. If no character types are selected (letters, numbers, special) it raises an exception as well.
-
-    :Example:
-
-    >>> generate_password(password_length=10, letters=True, numbers=True, special=True, characters_occurring_at_least_once=True)
-    'P8b$h3R9&j'
     """
     def is_character_occurring_at_least_once(password_to_check) -> bool:
         if letters:
@@ -48,10 +32,10 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
 
             for i in password_to_check:
                 if i.islower():
-                    if i in LETTERS:
+                    if i in ascii_letters:
                         is_character_lower_letter.append(True)
                 else:
-                    if i in LETTERS:
+                    if i in ascii_letters:
                         is_character_upper_letter.append(True)
 
             if not True in is_character_lower_letter or not True in is_character_upper_letter:
@@ -60,7 +44,7 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
         if numbers:
             is_character_number = []
             for i in password_to_check:
-                if i in NUMBERS:
+                if i in digits:
                     is_character_number.append(True)
             if True not in is_character_number:
                 return False
@@ -68,7 +52,7 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
         if special:
             is_character_special = []
             for i in password_to_check:
-                if i in SPECIAL_CHARACTERS:
+                if i in punctuation:
                     is_character_special.append(True)
             if not True in is_character_special:
                 return False
@@ -79,21 +63,21 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
         password = ""
         current_password_length: int = 0
         while password_length > current_password_length:
-            list_choice = randint(0, 2)  # generates a value between 0 and 2. This is used to generate evenly often usage of letters, numbers and special characters
-            if list_choice == 0:  # LETTERS string has value 0
+            list_choice = choice(["letters", "numbers", "special"])
+            if list_choice == "letters":
                 if letters:
-                    character = LETTERS[randint(0, len(LETTERS) - 1)]
+                    character = ascii_letters[randint(0, len(ascii_letters) - 1)]
                     password += character
                     current_password_length += 1
 
-            elif list_choice == 1:  # NUMBERS string has value 1
+            elif list_choice == "numbers":
                 if numbers:
-                    character = NUMBERS[randint(0, len(NUMBERS) - 1)]
+                    character = digits[randint(0, len(digits) - 1)]
                     password += character
                     current_password_length += 1
             else:
-                if special:  # SPECIAL_CHARACTERS string has value 2
-                    character = SPECIAL_CHARACTERS[randint(0, len(SPECIAL_CHARACTERS) - 1)]
+                if special:
+                    character = punctuation[randint(0, len(punctuation) - 1)]
                     password += character
                     current_password_length += 1
         return password
@@ -133,7 +117,7 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
 def main():
     pass
     #DEBUG
-    # print(generate_password(password_length=4, letters=True, numbers=False, special=True, characters_occurring_at_least_once=True))
+    print(generate_password(password_length=40, letters=True, numbers=False, special=True, characters_occurring_at_least_once=True))
 
 if __name__ == "__main__":
     main()
