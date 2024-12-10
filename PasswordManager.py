@@ -465,7 +465,7 @@ def main() -> None:
         filepath = get_filepath()
         if not is_file_found(filepath):
             break
-        if is_file_empty(filepath): # checks if selected database's size is 0 bytes.
+        if is_file_empty(filepath):
             print("I: Database selected is empty, setting new master password")
             PasswordManagerCryptography.Salt().get_salt()
             if cli_args_given:
