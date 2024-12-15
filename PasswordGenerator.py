@@ -2,7 +2,6 @@ from random import choice, randint
 from string import ascii_letters
 from string import digits
 from string import punctuation
-
 # DO NOT USE IT TO STORE ANY IMPORTANT DATA
 # THIS IS JUST A FUN PROJECT NOT MEANT TO BE USED
 
@@ -27,37 +26,42 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
     """
     def is_character_occurring_at_least_once(password_to_check) -> bool:
         if letters:
-            is_character_lower_letter = []
-            is_character_upper_letter = []
+            is_character_lowercase: bool = False
+            is_character_uppercase: bool = False
 
-            for i in password_to_check:
-                if i.islower():
-                    if i in ascii_letters:
-                        is_character_lower_letter.append(True)
+            for character in password_to_check:
+                if character.islower():
+                    if character in ascii_letters:
+                        is_character_lowercase = True
                 else:
-                    if i in ascii_letters:
-                        is_character_upper_letter.append(True)
+                    if character in ascii_letters:
+                        is_character_uppercase = True
 
-            if not True in is_character_lower_letter or not True in is_character_upper_letter:
+            if not is_character_lowercase or not is_character_uppercase:
+                print("No upper- or lower-case characters")
                 return False
 
         if numbers:
-            is_character_number = []
-            for i in password_to_check:
-                if i in digits:
-                    is_character_number.append(True)
-            if True not in is_character_number:
+            is_character_number: bool = False
+            for character in password_to_check:
+                if character in digits:
+                    is_character_number = True
+            if not is_character_number:
+                print("No numbers")
                 return False
 
+
         if special:
-            is_character_special = []
-            for i in password_to_check:
-                if i in punctuation:
-                    is_character_special.append(True)
-            if not True in is_character_special:
+            is_character_special: bool = False
+            for character in password_to_check:
+                if character in punctuation:
+                    is_character_special = True
+            if not is_character_special:
+                print("No special character")
                 return False
 
         return True
+
 
     def generate() -> str:
         password = ""
