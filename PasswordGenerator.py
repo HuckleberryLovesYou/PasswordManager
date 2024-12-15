@@ -65,32 +65,32 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
 
     def generate() -> str:
         password = ""
-        current_password_length: int = 0
-        while password_length > current_password_length:
+        while password_length > len(password):
             list_choice = choice(["letters", "numbers", "special"])
             if list_choice == "letters":
                 if letters:
                     character = ascii_letters[randint(0, len(ascii_letters) - 1)]
                     password += character
-                    current_password_length += 1
 
             elif list_choice == "numbers":
                 if numbers:
                     character = digits[randint(0, len(digits) - 1)]
                     password += character
-                    current_password_length += 1
             else:
                 if special:
                     character = punctuation[randint(0, len(punctuation) - 1)]
                     password += character
-                    current_password_length += 1
         return password
 
-
+    # Check input
     if not letters and not numbers and not special:
         print("Can't generate a password without any characters")
         raise Exception("Can't generate a password without any characters")
 
+    # handles float inputs by rounding it to no decimal places
+    password_length: int = round(password_length)
+
+    # get min. password_length based on passed parameters
     if characters_occurring_at_least_once:
         min_password_length: int = 0
         if letters:
@@ -102,26 +102,23 @@ def generate_password(password_length: int, letters=True, numbers=True, special=
     else:
         min_password_length: int = 1
 
-    password_length: int = round(password_length)  # handles float inputs by rounding it to no decimal places
     if password_length < min_password_length:
         raise Exception(f"Password length must be at least {min_password_length}")
 
+
     password = generate()
     if characters_occurring_at_least_once:
-        while True:
-            if is_character_occurring_at_least_once(password):
-                print("Characters are occurring at least once.")
-                break
-            else:
-                print(f"Characters are not occurring at least once. Regenerating password. Password skipped: {password}")
-                password = generate()
+        while not is_character_occurring_at_least_once(password):
+            print(f"I: Characters are not occurring at least once in generated Password. Generating a new password.\nPassword skipped: {password}")
+            password = generate()
+
     return password
 
 
 def main():
-    pass
     #DEBUG
-    print(generate_password(password_length=40, letters=True, numbers=False, special=True, characters_occurring_at_least_once=True))
+    for i in range(100):
+        print(generate_password(password_length=5, letters=True, numbers=True, special=True, characters_occurring_at_least_once=True))
 
 if __name__ == "__main__":
     main()
