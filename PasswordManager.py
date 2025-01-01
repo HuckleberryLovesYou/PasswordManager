@@ -6,7 +6,7 @@
 #Dependencies:
 #os
 #PasswordGenerator.py
-#PasswordManagerCryptography.py
+#Cryptography.py
 #tkinter
 
 # DO NOT USE IT TO STORE ANY IMPORTANT DATA
@@ -15,7 +15,7 @@ from os.path import exists
 from os import stat
 import PasswordGenerator
 from tkinter.filedialog import askopenfilename
-import PasswordManagerCryptography
+import Cryptography
 import argparse
 import base64
 from Config import Config
@@ -103,7 +103,7 @@ def get_entries() -> dict[int, list[str]] | None:
 def view() -> dict[int, list[str]] | None:
     return get_entries()
 
-def get_generated_password(password_length: int | str | None = None, allow_letters: bool = True, allow_numbers: bool = True, allow_special: bool = True, force_characters_occurring_at_least_once: bool = False) -> str | None:
+def generate_password(password_length: int, generate_letters: bool = True, generate_numbers: bool = True, generate_special: bool = True) -> str:
     """
     It generates a password using PasswordGenerator.generate_password() function. This function supports many different switches listed below.
     If no password_length is specified, it will raise an error.
@@ -111,32 +111,21 @@ def get_generated_password(password_length: int | str | None = None, allow_lette
     :param password_length: The length of the generated password. Only used if password is not provided. If password is not provided then password_length is required.
     :type password_length: int
 
-    :param allow_letters: This specifies the switches send to the generate_password() function. Whether to allow letters(lower- and uppercase) in the generated password. Default is True.
-    :type allow_letters: bool
+    :param generate_letters: This specifies the switches send to the generate_password() function. Whether to allow letters(lower- and uppercase) in the generated password. Default is True.
+    :type generate_letters: bool
 
-    :param allow_numbers: This specifies the switches send to the generate_password() function. Whether to allow numbers in the generated password. Default is True.
-    :type allow_numbers: bool
+    :param generate_numbers: This specifies the switches send to the generate_password() function. Whether to allow numbers in the generated password. Default is True.
+    :type generate_numbers: bool
 
-    :param allow_special: This specifies the switches send to the generate_password() function. Whether to allow special characters in the generated password. Default is True.
-    :type allow_special: bool
-
-    :param force_characters_occurring_at_least_once: This specifies the switches send to the generate_password() function. Whether to force at least one occurrence of each character type in the generated password. Default is False.
-    :type force_characters_occurring_at_least_once: bool
+    :param generate_special: This specifies the switches send to the generate_password() function. Whether to allow special characters in the generated password. Default is True.
+    :type generate_special: bool
 
     :return: It returns the newly generated password as a string. If there was an error it  will return None.
-    :rtype: str | None
+    :rtype: str
     """
-    # generates a password according to switches
-    if password_length is None:
-        print("E: No password length specified.")
-        return None
-    try:
-        password_length = int(password_length)
-    except ValueError:
-        print(f"E: Expected type int for password_length but got {type(password_length)} instead")
-        return None
-    return PasswordGenerator.generate_password(password_length, letters=allow_letters, numbers=allow_numbers, special=allow_special, characters_occurring_at_least_once=force_characters_occurring_at_least_once)
-
+    generator = PasswordGenerator.PasswordGenerator()
+    generator.configure_generation(password_length, generate_letters, generate_numbers, generate_special)
+    return generator.generate()
 def add(title: str, username: str, password: str | None = None, sticky_index: int | None = None) -> tuple[int, str] | None:
     """
     Used to add an entry to the database. It will determine the next available index or
@@ -252,7 +241,7 @@ def edit(index_to_edit: int, selected_field: str, new_field_value: str) -> None:
         remove(index_to_edit)
         add(sticky_index=index_to_edit, title=entries[index_to_edit][0], username=entries[index_to_edit][1], password=new_field_value)
     else:
-        print("E: Selected field is not supported. Supported fields: title [t], username [u], password [p]")
+        print("E: Selected field is not supported. Supported fields: title, username, password")
         return None
     print("I: Successfully edited entry")
 
@@ -272,7 +261,7 @@ def encrypt_and_quit(error_message="") -> None:
         print("Error occurred!")
         raise Exception(f"{error_message}")
 
-    if PasswordManagerCryptography.encrypt_database(Config.database_filepath, Config.key):
+    if Cryptography.encrypt_database(Config.database_filepath, Config.key):
         quit("User ended the program")
 
 def main() -> None:
@@ -328,12 +317,12 @@ def main() -> None:
                     password_length = int(password_length)
                 else:
                     return None
-                index, used_password = add(title, username, password=get_generated_password(password_length))
+                index, set_password = add(title, username, password=generate_password(password_length))
             else:
                 title = args.title
                 username = args.username
                 password = args.password
-                index, used_password = add(title, username, password)
+                index, set_password = add(title, username, password)
         else:
             title = input("Title: ")
             username = input("Username: ")
@@ -343,42 +332,40 @@ def main() -> None:
                     characters_must_occur_once_bool: bool = False
                     generate_letters: bool = False
                     generate_numbers: bool = False
-                    generate_special_characters: bool = False
+                    generate_special: bool = False
 
                     if input("Enable the generation of letters (lowercase and uppercase)? [y/n]: ").lower() == "y":
                         generate_letters = True
                     if input("Enable the generation of numbers? [y/n]: ").lower() == "y":
                         generate_numbers = True
                     if input("Enable the generation of special characters? [y/n]: ").lower() == "y":
-                        generate_special_characters = True
-                    if input("Force at least one occurrences of above characters? [y/n]: ").lower() == "y":
-                        characters_must_occur_once_bool = True
+                        generate_special = True
 
-                    if not generate_letters and not generate_numbers and not generate_special_characters:
+                    if not generate_letters and not generate_numbers and not generate_special:
                         print("Cannot generate a password without characters.")
                         return None
 
                     while True:
-                        generate_password_length: str = input("Enter password length [4-inf]: ")
-                        if generate_password_length.isdigit():
-                            generate_password_length: int = int(generate_password_length)
-                            if generate_password_length > 1:
-                                index, used_password = add(title, username, password=get_generated_password(generate_password_length, allow_letters=generate_letters, allow_numbers=generate_numbers, allow_special=generate_special_characters, force_characters_occurring_at_least_once=characters_must_occur_once_bool))
+                        password_length: str = input("Enter password length [4-inf]: ")
+                        if password_length.isdigit():
+                            password_length: int = int(password_length)
+                            if password_length > 1:
+                                index, set_password = add(title, username, password=generate_password(password_length, generate_letters, generate_numbers, generate_special))
                                 break
                 else:
-                    generate_password_length: str = input("Enter password length [4-inf]: ")
-                    if generate_password_length.isdigit() and len(generate_password_length) >= 2:
-                        index, used_password = add(title, username, password=get_generated_password(generate_password_length))
+                    password_length: str = input("Enter password length [4-inf]: ")
+                    if password_length.isdigit():
+                        index, set_password = add(title, username, password=generate_password(int(password_length)))
                     else:
                         print("Please enter a valid password length")
                         return None
             else:
                 try:
-                    index, used_password = add(title=title, username=username, password=password)
+                    index, set_password = add(title=title, username=username, password=password)
                 except TypeError:
                     return None
 
-        print("I: Your password is set to ", used_password)
+        print(f"I: Your password is set to: (length: {len(set_password)})", set_password)
         if cli_args_given:
             encrypt_and_quit()
 
@@ -426,14 +413,14 @@ def main() -> None:
 
     def handle_database_cryptography() -> str:
         while True:
-            PasswordManagerCryptography.Salt().get_salt()
+            Cryptography.Salt().get_salt()
             if cli_args_given:
                 master_password: str = args.master_password
             else:
                 master_password: str = input("Enter Master Password: ").lower()
-            PasswordManagerCryptography.convert_master_password_to_key(master_password)
+            Cryptography.convert_master_password_to_key(master_password)
 
-            if PasswordManagerCryptography.decrypt_database(Config.database_filepath, Config.key):
+            if Cryptography.decrypt_database(Config.database_filepath, Config.key):
                 if not cli_args_given:
                     print("I: DO NOT CLOSE THE PROGRAM without the use of 'q to quit' in mode selection!")
                 return master_password
@@ -467,12 +454,12 @@ def main() -> None:
             break
         if is_file_empty(filepath):
             print("I: Database selected is empty, setting new master password")
-            PasswordManagerCryptography.Salt().get_salt()
+            Cryptography.Salt().get_salt()
             if cli_args_given:
                 master_password: str = args.master_password
             else:
                 master_password: str = input("Enter new Master Password: ")
-                PasswordManagerCryptography.convert_master_password_to_key(master_password)
+                Cryptography.convert_master_password_to_key(master_password)
             print(f"I: Set {master_password} as new master password. Don't forget it!")
         elif not is_file_encrypted(Config.database_filepath): # master_password is needed for encrypting database the next time
             while True:
