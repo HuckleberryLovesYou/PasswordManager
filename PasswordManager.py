@@ -3,12 +3,6 @@
 #   https://youtu.be/NpmFbWO6HPU?si=NUpQHy3AY0X9-qJh&t=4008 #
 #############################################################
 
-#Dependencies:
-#os
-#PasswordGenerator.py
-#Cryptography.py
-#tkinter
-
 # DO NOT USE IT TO STORE ANY IMPORTANT DATA
 
 from os.path import exists
@@ -313,11 +307,10 @@ def main() -> None:
                 title = args.title
                 username = args.username
                 password_length = input("Enter password length [4-inf]: ")
-                if password_length.isdigit():
-                    password_length = int(password_length)
-                else:
+                if not password_length.isdigit():
+                    print("Invalid password length.")
                     return None
-                index, set_password = add(title, username, password=generate_password(password_length))
+                index, set_password = add(title, username, password=generate_password(int(password_length)))
             else:
                 title = args.title
                 username = args.username
@@ -329,7 +322,6 @@ def main() -> None:
             password = input("Password ['G' to generate]: ")
             if password == "G":
                 if input("Configure password generation? [y/n]: ").lower() == "y":
-                    characters_must_occur_once_bool: bool = False
                     generate_letters: bool = False
                     generate_numbers: bool = False
                     generate_special: bool = False
@@ -467,7 +459,7 @@ def main() -> None:
                 master_password1: str = input("Enter Master Password: ")
                 master_password2: str = input("Enter Master Password again: ")
                 if master_password1 == master_password2:
-                    PasswordManagerCryptography.convert_master_password_to_key(master_password1)
+                    Cryptography.convert_master_password_to_key(master_password1)
                     break
                 else:
                     print("E: Passwords do not match.\nPlease try again.")
